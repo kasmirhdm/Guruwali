@@ -1536,6 +1536,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"PJOK-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Kebugaran Jasmani",
+          ""
+        ],
+        [
+          "Permainan dan Olahraga",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Atletik",
+          ""
+        ],
+        [
+          "Pola Hidup Sehat",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Kebugaran untuk Aktivitas Kerja",
+          ""
+        ],
+        [
+          "Pencegahan Cedera",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Kebugaran Jasmani",
+          ""
+        ],
+        [
+          "Pola Hidup Sehat",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Permainan dan Olahraga",
+          ""
+        ],
+        [
+          "Kebugaran untuk Aktivitas Kerja",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Atletik",
+          ""
+        ],
+        [
+          "Pencegahan Cedera",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
