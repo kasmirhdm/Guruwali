@@ -111,6 +111,31 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve_static(self, path):
         rel = urllib.parse.unquote(path)
+        if rel.startswith("/uploads/"):
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            name = rel[len("/uploads/"):]
+            root = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
+            full = os.path.abspath(os.path.join(root, name))
+            if not full.startswith(root + os.sep) or not os.path.isfile(full):
+                self._send_json(404, {"error": "Tidak ditemukan."})
+                return
+            try:
+                with open(full, "rb") as f:
+                    body = f.read()
+            except OSError:
+                self._send_json(404, {"error": "Tidak ditemukan."})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", MIME.get(os.path.splitext(full)[1].lower(), "application/octet-stream"))
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Cache-Control", "private, max-age=3600")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if rel == "/":
             rel = "/index.html"
         # cegah path traversal
