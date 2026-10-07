@@ -33,7 +33,7 @@ var GWMaster = {
       "Pendidikan Agama & Budi Pekerti", "PPKn", "Bahasa Indonesia",
       "Matematika", "Sejarah", "Bahasa Inggris", "Informatika", "PJOK",
       "Seni Rupa", "Seni Musik", "Seni Tari", "Seni Teater",
-      "Mata Pelajaran Kejuruan / Produktif", "Muatan Lokal"
+      "Mata Pelajaran Kejuruan / Produktif", "Koding dan Kecerdasan Artifisial", "Muatan Lokal"
     ]
   },
 
@@ -238,6 +238,12 @@ var GWMaster = {
       F: ["Peserta didik dapat mengembangkan aplikasi sederhana dan mengevaluasi keamanan sistem informasi.",
           "Peserta didik dapat memanfaatkan teknologi untuk kewirausahaan digital secara bertanggung jawab."]
     }
+    "Koding dan Kecerdasan Artifisial": {
+      C: ["Peserta didik memahami pola, algoritma, data, dan penggunaan teknologi AI secara aman dan bertanggung jawab."],
+      D: ["Peserta didik menerapkan berpikir komputasional, dasar pemrograman, data, dan konsep AI untuk memecahkan masalah sederhana secara bertanggung jawab."],
+      E: ["Peserta didik merancang solusi koding dan AI sederhana, menggunakan data secara tepat, serta menjelaskan risiko, etika, dan dampak penggunaan AI."],
+      F: ["Peserta didik mengembangkan solusi koding dan AI yang lebih terstruktur, mengevaluasi hasilnya, dan mempertimbangkan keamanan, etika, bias, serta dampaknya."]
+    },
   },
 
   /* Fase dari nomor kelas: A:1-2, B:3-4, C:5-6, D:7-9, E:10, F:11-12 */
