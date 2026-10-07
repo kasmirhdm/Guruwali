@@ -130,7 +130,44 @@
   </section>
   <section id="sec-penilaian" class="app-section hidden">
     <h2>Penilaian</h2>
-    <div class="placeholder-card"><p><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Modul Penilaian (input &amp; analisis nilai) segera hadir.</p></div>
+    <div class="assessment-grid">
+      <div class="form-card assessment-card">
+        <h3>Input Nilai</h3>
+        <p class="muted small">Masukkan nilai peserta didik. Analisis dihitung langsung di perangkat tanpa memakai kuota AI.</p>
+        <div class="form-row">
+          <label>Nama penilaian<input type="text" id="gradeTitle" placeholder="Contoh: Sumatif Persamaan Kuadrat"></label>
+          <label>KKTP / batas ketuntasan<input type="number" id="gradeThreshold" min="0" max="100" value="75"></label>
+        </div>
+        <div class="toolbar assessment-toolbar">
+          <button class="btn btn-ghost" id="addGradeRow" type="button">+ Tambah Siswa</button>
+          <button class="btn btn-primary" id="analyzeGrades" type="button">Analisis Nilai</button>
+          <button class="btn btn-ghost" id="clearGrades" type="button">Bersihkan</button>
+        </div>
+        <div class="grade-table-wrap">
+          <table class="grade-table">
+            <thead><tr><th>No</th><th>Nama Peserta Didik</th><th>Nilai</th><th>Status</th><th></th></tr></thead>
+            <tbody id="gradeRows"></tbody>
+          </table>
+        </div>
+        <p class="form-msg" id="gradeMsg"></p>
+      </div>
+      <div class="assessment-card assessment-result">
+        <h3>Ringkasan Analisis</h3>
+        <div id="gradeStats" class="grade-stats">
+          <div><span>Jumlah siswa</span><strong id="statCount">0</strong></div>
+          <div><span>Rata-rata</span><strong id="statAvg">—</strong></div>
+          <div><span>Tertinggi</span><strong id="statMax">—</strong></div>
+          <div><span>Terendah</span><strong id="statMin">—</strong></div>
+          <div><span>Tuntas</span><strong id="statMastery">—</strong></div>
+          <div><span>Belum tuntas</span><strong id="statNotMastered">—</strong></div>
+        </div>
+        <div id="gradeDistribution" class="grade-distribution"><p class="muted">Masukkan nilai lalu pilih <strong>Analisis Nilai</strong>.</p></div>
+        <div class="assessment-actions">
+          <button class="btn btn-ghost" id="saveGradeReport" type="button">Simpan ke Riwayat</button>
+          <button class="btn btn-ghost" id="exportGradesCsv" type="button">Unduh CSV</button>
+        </div>
+      </div>
+    </div>
   </section>
   <section id="sec-media" class="app-section hidden">
     <h2>Media Pembelajaran</h2>
