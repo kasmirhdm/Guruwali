@@ -149,7 +149,36 @@
   </section>
   <section id="sec-dokumen" class="app-section hidden">
     <h2>Dokumen &amp; File</h2>
-    <div class="placeholder-card"><p><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Upload &amp; tanya-jawab dokumen segera hadir.</p></div>
+    <div class="document-workspace">
+      <div class="form-card">
+        <h3>Impor Dokumen Teks</h3>
+        <p class="muted small">Untuk sekarang GuruWali dapat mengimpor <strong>.txt, .md, atau .csv</strong>. Isinya disimpan ke Riwayat dan bisa dipakai sebagai konteks Chat AI.</p>
+        <label>Pilih file
+          <input type="file" id="documentFile" accept=".txt,.md,.csv,text/plain,text/markdown,text/csv">
+        </label>
+        <label>Judul dokumen
+          <input type="text" id="documentTitle" placeholder="Judul otomatis dari nama file">
+        </label>
+        <button class="btn btn-primary" id="importDocumentBtn" type="button">Simpan Dokumen</button>
+        <p class="form-msg" id="documentMsg"></p>
+      </div>
+      <div class="form-card document-qa">
+        <h3>Tanya Dokumen</h3>
+        <label>Pilih dokumen
+          <select id="documentSelect"><option value="">— Pilih dokumen —</option></select>
+        </label>
+        <label>Pertanyaan
+          <textarea id="documentQuestion" rows="3" placeholder="Contoh: Apa inti dokumen ini?"></textarea>
+        </label>
+        <button class="btn btn-primary" id="askDocumentBtn" type="button">Tanya AI</button>
+        <div id="documentAnswer" class="document-answer"></div>
+      </div>
+    </div>
+    <div class="toolbar document-toolbar">
+      <input type="search" id="documentSearch" placeholder="Cari judul dokumen…">
+      <button class="btn btn-ghost" id="refreshDocuments" type="button">Muat ulang</button>
+    </div>
+    <div id="workspaceDocs" class="doc-list"><p class="muted">Memuat…</p></div>
   </section>
   <section id="sec-chat" class="app-section hidden">
     <h2>Chat AI Guru</h2>
