@@ -152,6 +152,8 @@ def resolve_model(gen_type, override=None):
     Di provider Gemini (satu model), selalu pakai default_model().
     Override di luar katalog tetap diterima bila polanya aman (untuk model baru di gateway).
     """
+    # Gemini adalah provider production default: semua generator memakai model Gemini
+    # yang dikonfigurasi server, kecuali gateway Invibuilder memang sengaja diaktifkan.
     if provider() != "invibuilder":
         return default_model()
     if override:
