@@ -1607,6 +1607,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"Sejarah-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Pengantar Ilmu Sejarah",
+          ""
+        ],
+        [
+          "Sejarah Indonesia",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Kolonialisme",
+          ""
+        ],
+        [
+          "Pergerakan Nasional",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Pendudukan Jepang",
+          ""
+        ],
+        [
+          "Proklamasi",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Pengantar Ilmu Sejarah",
+          ""
+        ],
+        [
+          "Pergerakan Nasional",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Sejarah Indonesia",
+          ""
+        ],
+        [
+          "Pendudukan Jepang",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Kolonialisme",
+          ""
+        ],
+        [
+          "Proklamasi",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
