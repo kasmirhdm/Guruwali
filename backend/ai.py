@@ -72,7 +72,7 @@ MODEL_IDS = {m["id"] for m in MODELS} | {m["id"] for m in IMAGE_MODELS}
 # Tiap kategori tugas memakai model yang paling cocok (saling melengkapi):
 # ringan  -> cepat & murah | standar -> seimbang | berat -> penalaran kuat.
 _MODEL_LIGHT = "openai/gpt-4o-mini"
-_MODEL_STANDARD = "openai/gpt-4o-mini"
+_MODEL_STANDARD = "deepseek/deepseek-v4-flash"
 _MODEL_HEAVY = "ar1/claude-sonnet-4-6"
 _IMAGE_MODEL = "mg-image-0.1"
 
@@ -156,6 +156,12 @@ def resolve_model(gen_type, override=None):
         return default_model()
     if override:
         override = str(override).strip()[:100]
+        # Empty/auto berarti gunakan smart routing berdasarkan tipe generator.
+        if override in ("", "auto"):
+            return model_for_type(gen_type)
+        # Mode hemat memakai model ringan yang konsisten dan murah.
+        if override == "auto:hemat":
+            return _MODEL_LIGHT
         if override in MODEL_IDS or _SAFE_MODEL.match(override):
             return override
     return model_for_type(gen_type)
