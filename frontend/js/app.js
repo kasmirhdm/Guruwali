@@ -137,6 +137,8 @@
     $("tabDaftar").classList.toggle("active", !login);
     $("loginForm").classList.toggle("hidden", !login);
     $("registerForm").classList.toggle("hidden", login);
+    var headline = $("authHeadline");
+    if (headline) headline.textContent = login ? "Selamat datang kembali." : "Mulai bekerja lebih cerdas.";
   }
 
   function refreshAuthUI() {
@@ -816,6 +818,10 @@
     // auth tabs
     $("tabMasuk").addEventListener("click", function () { setAuthTab("login"); });
     $("tabDaftar").addEventListener("click", function () { setAuthTab("register"); });
+    var switchRegister = $("switchRegister");
+    var switchLogin = $("switchLogin");
+    if (switchRegister) switchRegister.addEventListener("click", function () { setAuthTab("register"); });
+    if (switchLogin) switchLogin.addEventListener("click", function () { setAuthTab("login"); });
 
     $("loginForm").addEventListener("submit", function (e) {
       e.preventDefault();
