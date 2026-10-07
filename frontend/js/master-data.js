@@ -31,12 +31,28 @@ var GWMaster = {
     ],
     SMK: [
       "Pendidikan Agama & Budi Pekerti", "PPKn", "Bahasa Indonesia",
-      "Matematika", "IPA", "IPS", "Bahasa Inggris", "Informatika",
-      "PJOK", "Prakarya", "Mata Pelajaran Kejuruan / Produktif", "Muatan Lokal"
+      "Matematika", "Sejarah", "Bahasa Inggris", "Informatika", "PJOK",
+      "Seni Rupa", "Seni Musik", "Seni Tari", "Seni Teater",
+      "Mata Pelajaran Kejuruan / Produktif", "Muatan Lokal"
     ]
   },
 
   SEMESTER: ["1 (Ganjil)", "2 (Genap)"],
+
+  // Daftar mapel yang benar-benar tampil untuk kelas terpilih.
+  // Koding dan Kecerdasan Artifisial merupakan mapel pilihan yang mulai
+  // diterapkan bertahap pada kelas 5, 7, dan 10.
+  mapelList: function (jenjang, kelas) {
+    var list = (this.MAPEL[jenjang] || []).slice();
+    var k = parseInt(kelas, 10);
+    if ((jenjang === "SD" && k >= 5) || (jenjang === "SMP" && k >= 7) ||
+        ((jenjang === "SMA" || jenjang === "SMK") && k >= 10)) {
+      if (list.indexOf("Koding dan Kecerdasan Artifisial") < 0) {
+        list.push("Koding dan Kecerdasan Artifisial");
+      }
+    }
+    return list;
+  },
 
   /* Alokasi waktu per jenjang (1 JP: SD=35 mnt, SMP=40 mnt, SMA/SMK=45 mnt) */
   ALOKASI: {
