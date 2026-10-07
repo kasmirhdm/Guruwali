@@ -241,6 +241,33 @@ var GWMaster = {
     return [];
   },
 
+  // Status cakupan data untuk kombinasi yang dipilih.
+  coverage: function (mapel, jenjang, kelas, semester) {
+    var alias = {
+      "PPKn": jenjang === "SMA" || jenjang === "SMK" ? "PPKn-SMA" : "PPKn",
+      "Informatika": (jenjang === "SMA" || jenjang === "SMK") ? "Informatika-SMA" : "Informatika",
+      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : "Bahasa Inggris"
+    };
+    var key = alias[mapel] || mapel;
+    var out = { mapel: mapel || "", jenjang: jenjang || "", kelas: kelas || "", semester: semester || "", materi: false, cp: false, exact: false };
+    try {
+      if (typeof GWMateri !== "undefined" && GWMateri[key] && GWMateri[key][jenjang] && GWMateri[key][jenjang][kelas]) {
+        var node = GWMateri[key][jenjang][kelas];
+        var rows = [];
+        if (semester && node[semester]) rows = node[semester];
+        else rows = (node["1"] || []).concat(node["2"] || []);
+        out.exact = true;
+        out.materi = rows.length > 0;
+        out.cp = rows.some(function (row) { return Array.isArray(row) && row[1] && String(row[1]).trim(); });
+      }
+    } catch (e) {}
+    if (!out.cp) {
+      var fase = this.faseOf(kelas);
+      out.cp = !!(this.CP[key] && this.CP[key][fase]) || !!(this.CP[mapel] && this.CP[mapel][fase]);
+    }
+    return out;
+  },
+
   materiList: function (mapel, jenjang, kelas, semester) {
     // Alias mapel: nama di form -> key di GWMateri
     var alias = {
@@ -254,12 +281,13 @@ var GWMaster = {
       if (typeof GWMateri !== "undefined" && GWMateri[key]) {
         var jm = GWMateri[key];
         // SMK memakai data SMA
-        var node = jm[jenjang] || (jenjang === "SMK" ? jm["SMA"] : null) || jm["SD"] || jm["SMP"] || jm["SMA"];
+        // Hanya gunakan data untuk jenjang dan kelas yang benar-benar diminta.
+        // Jangan fallback ke jenjang/kelas lain karena dapat menghasilkan materi/CP yang salah.
+        var node = jm[jenjang];
         if (node) {
-          var kn = (kelas && node[kelas]) || node[Object.keys(node)[0]];
+          var kn = kelas ? node[kelas] : null;
           if (kn) {
             if (semester && kn[semester]) return kn[semester];
-            // gabung semua semester
             var all = [];
             ["1", "2"].forEach(function (s) { if (kn[s]) all = all.concat(kn[s]); });
             if (all.length) return all;
