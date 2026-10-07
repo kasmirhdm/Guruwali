@@ -40,6 +40,8 @@ SYSTEM_ID = (
     "lain yang membutuhkan langkah kerja, tampilkan prosedur yang runtut dan dapat diverifikasi.\n"
     "10. Sebelum mengirim hasil, lakukan pemeriksaan akhir: kelengkapan, konsistensi, kesesuaian "
     "waktu, kesesuaian level, kebenaran jawaban, dan keterhubungan antarbagian.\n"
+    "11. Untuk soal matematika/IPA/akuntansi atau tugas yang memiliki perhitungan, hitung ulang setiap langkah secara mandiri. Untuk PG, pastikan tepat satu opsi yang benar, kunci cocok dengan hasil hitung, dan pembahasan menghasilkan hasil yang sama. Jika tidak ada opsi yang benar atau ada lebih dari satu opsi benar, wajib memperbaiki soal/opsinya sebelum mengirim. Jangan mempertahankan soal yang cacat hanya demi memenuhi jumlah.\n"
+    "12. Untuk aljabar, persamaan, dan ekspresi numerik, lakukan verifikasi substitusi dengan setidaknya satu nilai yang valid bila relevan. Jangan menulis catatan seperti 'koreksi', 'opsi salah', 'kemungkinan ralat', atau menyatakan kunci yang bertentangan dengan perhitungan akhir; perbaiki kontennya terlebih dahulu.\n"
     "Format keluaran memakai heading yang jelas (##, ###), tabel bila membantu, dan daftar berpoin. "
     "Jangan memakai emoji berlebihan."
 )
@@ -235,10 +237,11 @@ TEMPLATES = {
         "maxtokens": 8000,
         "title": "Soal PG {materi} - Kelas {kelas}",
         "instr": (
-            "Buatkan SOAL PILIHAN GANDA sesuai jumlah yang diminta: setiap soal punya stimulus "
-            "singkat (teks/gambar deskriptif/data), 4 opsi jawaban (A-D) dengan pengecoh yang "
-            "masuk akal, dan sebaran level kognitif (C1-C6) yang merata termasuk beberapa soal "
-            "HOTS. Setelah semua soal, sertakan KUNCI JAWABAN dan PEMBAHASAN singkat per soal "
+            "Buatkan SOAL PILIHAN GANDA sesuai jumlah yang diminta. Sebelum menampilkan hasil, selesaikan dan verifikasi setiap soal secara internal. "
+            "Setiap soal punya stimulus singkat (teks/gambar deskriptif/data), 4 opsi jawaban (A-D) dengan pengecoh yang "
+            "masuk akal, dan sebaran level kognitif (C1-C6) yang merata termasuk beberapa soal HOTS. "
+            "Untuk setiap PG, pastikan tepat satu opsi A-D yang benar; kunci harus sesuai hasil perhitungan dan pembahasan. "
+            "Jika hasil hitung tidak cocok dengan opsi, ubah opsi atau ubah soal sampai valid. Setelah semua soal, sertakan KUNCI JAWABAN dan PEMBAHASAN singkat per soal "
             "secara otomatis."
         ),
     },
