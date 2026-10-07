@@ -38,7 +38,7 @@ Environment (opsional):
 | `GURUWALI_AI_KEY` | _(kosong)_ | API key Invibuilder (gateway multi-model) — **prioritas, jangan commit!** |
 | `GURUWALI_GEMINI_KEY` | _(kosong)_ | API key Gemini (fallback bila `GURUWALI_AI_KEY` kosong) — **jangan commit!** |
 | `GURUWALI_AI_BASE` | _(otomatis)_ | Base URL OpenAI-compatible kustom. Default: Invibuilder bila `GURUWALI_AI_KEY` ada, else Gemini |
-| `GURUWALI_MODEL | `gemini-flash-lite-latest` | Model default bila routing tidak menentukan lain |
+| `GURUWALI_MODEL | `gemini-2.5-flash-lite` | Model default bila routing tidak menentukan lain |
 
 ## Model AI & Smart Routing
 
