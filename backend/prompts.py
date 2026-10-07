@@ -467,6 +467,25 @@ def build_prompt(gen_type, inputs):
         raise ValueError(f"Tipe generator tidak dikenal: {gen_type}")
     data = _ctx(inputs)
     extra = ""
+    signature_types = {"modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
+                       "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"}
+    if gen_type in signature_types:
+        extra += (
+            "\nATURAN TANDA TANGAN DOKUMEN:\n"
+            "Dokumen ini termasuk dokumen yang lazim memerlukan pengesahan. Jika data identitas "
+            "sekolah/guru tersedia, gunakan data tersebut apa adanya. Jangan mengarang nama, NIP, "
+            "nomor surat, atau jabatan. Ikuti signature_mode dari data guru. "
+            "Gunakan placeholder [NAMA KEPALA SEKOLAH], [NIP KEPALA SEKOLAH], [NAMA GURU], "
+            "[NIP GURU], [JABATAN GURU], [KOTA], dan [TANGGAL] bila datanya belum tersedia. "
+            "Untuk mode guru-kepala, buat dua blok tanda tangan; untuk guru-saja hanya blok guru; "
+            "untuk kepala-saja hanya blok kepala sekolah; untuk tanpa-tanda-tangan jangan membuat "
+            "blok tanda tangan. Jangan membuat tanda tangan fiktif atau gambar tanda tangan."
+        )
+    if gen_type == "proposal":
+        extra += (
+            "\nLEMBAR PENGESAHAN: sediakan tempat tanda tangan pihak yang relevan, "
+            "dengan kepala sekolah sebagai pengesah bila mode mengizinkan."
+        )
     if gen_type == "chat-bebas":
         extra = f"\nPertanyaan guru: {inputs.get('pesan', '')}\n"
     return (
