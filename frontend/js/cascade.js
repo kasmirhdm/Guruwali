@@ -61,7 +61,8 @@ var GWCascade = (function () {
   function updateMapel(form) {
     var m = field(form, "mapel");
     if (!m || m.tagName !== "SELECT") return;
-    var list = M.MAPEL[currentJenjang(form)] || [];
+    var kelas = field(form, "kelas");
+    var list = M.mapelList ? M.mapelList(currentJenjang(form), kelas ? kelas.value : "") : (M.MAPEL[currentJenjang(form)] || []);
     var prev = m.value;
     fillSelect(m, list, phOf(m));
     if (list.indexOf(prev) >= 0) m.value = prev;
@@ -117,12 +118,21 @@ var GWCascade = (function () {
     ph.value = "";
     ph.textContent = "— Pilih materi —";
     sel.appendChild(ph);
-    M.materiList(mapel, jenjang, kelas, sem).forEach(function (pair) {
+    var coverage = M.coverage ? M.coverage(mapel, jenjang, kelas, sem) : { exact: false, materi: false, cp: false };
+    var rows = M.materiList(mapel, jenjang, kelas, sem);
+    rows.forEach(function (pair) {
       var o = document.createElement("option");
       o.value = pair[0];
       o.textContent = pair[0];
       sel.appendChild(o);
     });
+    if (!rows.length) {
+      var empty = document.createElement("option");
+      empty.value = "";
+      empty.textContent = coverage.exact ? "— Belum ada materi terstruktur —" : "— Data materi belum tersedia untuk kombinasi ini —";
+      empty.disabled = true;
+      sel.appendChild(empty);
+    }
     var c = document.createElement("option");
     c.value = "__custom__";
     c.textContent = "✎ Ketik manual...";
@@ -199,7 +209,8 @@ var GWCascade = (function () {
     while (pick.firstChild) pick.removeChild(pick.firstChild);
     pick.appendChild(mkOption("— Pilih CP umum (opsional) —", ""));
     if (!list.length) {
-      pick.appendChild(mkOption("Belum ada saran CP untuk mapel ini", ""));
+      var cov = M.coverage ? M.coverage(m ? m.value : "", "", k ? k.value : "", "") : null;
+      pick.appendChild(mkOption("CP belum tersedia — isi/tempel CP secara manual", ""));
       pick.options[pick.options.length - 1].disabled = true;
       return;
     }

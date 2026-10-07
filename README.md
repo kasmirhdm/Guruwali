@@ -38,7 +38,7 @@ Environment (opsional):
 | `GURUWALI_AI_KEY` | _(kosong)_ | API key Invibuilder (gateway multi-model) — **prioritas, jangan commit!** |
 | `GURUWALI_GEMINI_KEY` | _(kosong)_ | API key Gemini (fallback bila `GURUWALI_AI_KEY` kosong) — **jangan commit!** |
 | `GURUWALI_AI_BASE` | _(otomatis)_ | Base URL OpenAI-compatible kustom. Default: Invibuilder bila `GURUWALI_AI_KEY` ada, else Gemini |
-| `GURUWALI_MODEL` | `gemini-flash-lite-latest` | Model default (dipakai bila routing tidak menentukan lain) |
+| `GURUWALI_MODEL | `gemini-2.5-flash-lite` | Model default bila routing tidak menentukan lain |
 
 ## Model AI & Smart Routing
 
@@ -52,11 +52,11 @@ paling cocok — saling melengkapi:
 
 | Kategori | Model | Untuk tipe |
 |---|---|---|
-| Ringan/cepat | `gpt-4o-mini` | ice-breaking, refleksi, jurnal-mengajar, pengayaan, chat-bebas |
-| Standar | `deepseek-chat` (DeepSeek V3) | rpp, materi, soal-pg/uraian, kisi-kisi, lkpd, rubrik, surat, proposal, dll |
-| Berat/penalaran | `deepseek-reasoner` (DeepSeek R1) | modul-ajar, atp, tp, kktp, prota, prosem, soal-hots, pembahasan |
+| Ringan/cepat | `openai/gpt-4o-mini` | ice-breaking, refleksi, jurnal-mengajar, pengayaan, chat-bebas |
+| Standar | `deepseek/deepseek-v4-flash` | rpp, materi, soal-pg/uraian, kisi-kisi, lkpd, rubrik, surat, proposal, dll |
+| Berat/penalaran | `ar1/claude-sonnet-4-6` | modul-ajar, atp, tp, kktp, prota, prosem, soal-hots, pembahasan |
 
-> Tugas berat memakai `deepseek-reasoner`. Alternatif premium `claude-3-5-sonnet-20241022`
+> Tugas berat memakai `deepseek-reasoner`. Alternatif premium `ar1/claude-sonnet-4-6`
 > sudah ada di katalog — cukup ganti satu baris `_MODEL_HEAVY` di `ai.py` bila ingin Claude.
 > ID model mengikuti penamaan umum provider; sesuaikan di `MODELS` bila gateway memakai alias berbeda.
 
@@ -66,6 +66,10 @@ Mode "Otomatis (disarankan)" memakai smart routing di atas. Setiap hasil menampi
 badge model yang dipakai ("Dibuat dengan …").
 
 Mode Gemini (tanpa `GURUWALI_AI_KEY`): routing dinonaktifkan, selalu pakai `GURUWALI_MODEL`.
+
+## Deployment HTTPS
+
+Untuk produksi di belakang HTTPS/reverse proxy, set `GURUWALI_SECURE_COOKIE=1` agar session cookie memakai flag `Secure`. Biarkan kosong saat pengembangan lokal melalui HTTP.
 
 ## Dependensi Python
 

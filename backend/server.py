@@ -27,21 +27,25 @@ import prompts
 
 HOST = os.environ.get("GURUWALI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("GURUWALI_PORT", "8081"))
+SECURE_COOKIE = os.environ.get("GURUWALI_SECURE_COOKIE", "").lower() in ("1", "true", "yes", "on")
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
 
 # Rate limit: 10 request/menit/IP untuk /api/*
 RATE_WINDOW = 60
-RATE_MAX = 10
+RATE_MAX = 60
+AI_RATE_MAX = 20
+AUTH_RATE_MAX = 10
 _rate = {}
 
 
-def rate_ok(ip):
+def rate_ok(ip, bucket="general", limit=RATE_MAX):
     t = time.time()
-    hits = [x for x in _rate.get(ip, []) if t - x < RATE_WINDOW]
-    if len(hits) >= RATE_MAX:
+    key = (bucket, ip)
+    hits = [x for x in _rate.get(key, []) if t - x < RATE_WINDOW]
+    if len(hits) >= limit:
         return False
     hits.append(t)
-    _rate[ip] = hits
+    _rate[key] = hits
     return True
 
 
@@ -66,13 +70,17 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         if set_cookie:
             self.send_header(
                 "Set-Cookie",
-                f"gw_session={set_cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age={14*24*3600}",
+                f"gw_session={set_cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age={14*24*3600}" + ("; Secure" if SECURE_COOKIE else ""),
             )
         if clear_cookie:
-            self.send_header("Set-Cookie", "gw_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0")
+            self.send_header("Set-Cookie", "gw_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0" + ("; Secure" if SECURE_COOKIE else ""))
         self.end_headers()
         self.wfile.write(body)
 
@@ -103,6 +111,31 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve_static(self, path):
         rel = urllib.parse.unquote(path)
+        if rel.startswith("/uploads/"):
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            name = rel[len("/uploads/"):]
+            root = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
+            full = os.path.abspath(os.path.join(root, name))
+            if not full.startswith(root + os.sep) or not os.path.isfile(full):
+                self._send_json(404, {"error": "Tidak ditemukan."})
+                return
+            try:
+                with open(full, "rb") as f:
+                    body = f.read()
+            except OSError:
+                self._send_json(404, {"error": "Tidak ditemukan."})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", MIME.get(os.path.splitext(full)[1].lower(), "application/octet-stream"))
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Cache-Control", "private, max-age=3600")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if rel == "/":
             rel = "/index.html"
         # cegah path traversal
@@ -121,6 +154,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         self.send_header("Cache-Control", "no-cache" if ext == ".html" else "public, max-age=3600")
         self.end_headers()
         self.wfile.write(body)
@@ -133,7 +170,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if path.startswith("/api/"):
-            if not rate_ok(self.client_address[0]):
+            if not rate_ok(self.client_address[0], "general", RATE_MAX):
                 self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
                 return
             self._api_get(path, urllib.parse.parse_qs(parsed.query))
@@ -145,7 +182,9 @@ class Handler(BaseHTTPRequestHandler):
         if not parsed.path.startswith("/api/"):
             self._send_json(404, {"error": "Tidak ditemukan."})
             return
-        if not rate_ok(self.client_address[0]):
+        bucket = "ai" if parsed.path in ("/api/generate", "/api/generate-image") else ("auth" if parsed.path in ("/api/login", "/api/register") else "general")
+        limit = AI_RATE_MAX if bucket == "ai" else (AUTH_RATE_MAX if bucket == "auth" else RATE_MAX)
+        if not rate_ok(self.client_address[0], bucket, limit):
             self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
             return
         self._api_post(parsed.path)

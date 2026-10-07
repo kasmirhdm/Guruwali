@@ -31,12 +31,23 @@ var GWMaster = {
     ],
     SMK: [
       "Pendidikan Agama & Budi Pekerti", "PPKn", "Bahasa Indonesia",
-      "Matematika", "IPA", "IPS", "Bahasa Inggris", "Informatika",
-      "PJOK", "Prakarya", "Mata Pelajaran Kejuruan / Produktif", "Muatan Lokal"
+      "Matematika", "Sejarah", "Bahasa Inggris", "Informatika", "PJOK",
+      "Seni Rupa", "Seni Musik", "Seni Tari", "Seni Teater",
+      "Mata Pelajaran Kejuruan / Produktif", "Koding dan Kecerdasan Artifisial", "Muatan Lokal"
     ]
   },
 
   SEMESTER: ["1 (Ganjil)", "2 (Genap)"],
+
+  mapelList: function (jenjang, kelas) {
+    var list = (this.MAPEL[jenjang] || []).slice();
+    var k = parseInt(kelas, 10);
+    if ((jenjang === "SD" && k >= 5) || (jenjang === "SMP" && k >= 7) ||
+        ((jenjang === "SMA" || jenjang === "SMK") && k >= 10)) {
+      if (list.indexOf("Koding dan Kecerdasan Artifisial") < 0) list.push("Koding dan Kecerdasan Artifisial");
+    }
+    return list;
+  },
 
   /* Alokasi waktu per jenjang (1 JP: SD=35 mnt, SMP=40 mnt, SMA/SMK=45 mnt) */
   ALOKASI: {
@@ -224,6 +235,13 @@ var GWMaster = {
     }
   },
 
+  "Koding dan Kecerdasan Artifisial": {
+    C: ["Peserta didik memahami pola, algoritma, data, dan penggunaan teknologi AI secara aman dan bertanggung jawab."],
+    D: ["Peserta didik menerapkan berpikir komputasional, dasar pemrograman, data, dan konsep AI untuk memecahkan masalah sederhana secara bertanggung jawab."],
+    E: ["Peserta didik merancang solusi koding dan AI sederhana, menggunakan data secara tepat, serta menjelaskan risiko, etika, dan dampak penggunaan AI."],
+    F: ["Peserta didik mengembangkan solusi koding dan AI yang lebih terstruktur, mengevaluasi hasilnya, dan mempertimbangkan keamanan, etika, bias, serta dampaknya."]
+  },
+
   /* Fase dari nomor kelas: A:1-2, B:3-4, C:5-6, D:7-9, E:10, F:11-12 */
   faseOf: function (kelas) {
     var k = parseInt(kelas, 10);
@@ -241,12 +259,46 @@ var GWMaster = {
     return [];
   },
 
+  coverage: function (mapel, jenjang, kelas, semester) {
+    var alias = {
+      "PPKn": jenjang === "SMK" ? "PPKn-SMK" : (jenjang === "SMA" ? "PPKn-SMA" : "PPKn"),
+      "Informatika": jenjang === "SMK" ? "Informatika-SMK" : (jenjang === "SMA" ? "Informatika-SMA" : "Informatika"),
+      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : (jenjang === "SMK" ? "Bahasa Inggris-SMK" : "Bahasa Inggris"),
+      "Matematika": jenjang === "SMK" ? "Matematika-SMK" : "Matematika",
+      "Bahasa Indonesia": jenjang === "SMK" ? "Bahasa Indonesia-SMK" : "Bahasa Indonesia",
+      "PJOK": jenjang === "SMK" ? "PJOK-SMK" : "PJOK",
+      "Sejarah": jenjang === "SMK" ? "Sejarah-SMK" : "Sejarah",
+      "Koding dan Kecerdasan Artifisial": "Koding dan Kecerdasan Artifisial"
+    };
+    var key = alias[mapel] || mapel;
+    var out = { mapel: mapel || "", jenjang: jenjang || "", kelas: kelas || "", semester: semester || "", materi: false, cp: false, exact: false };
+    try {
+      if (typeof GWMateri !== "undefined" && GWMateri[key] && GWMateri[key][jenjang] && GWMateri[key][jenjang][kelas]) {
+        var node = GWMateri[key][jenjang][kelas];
+        var rows = semester && node[semester] ? node[semester] : (node["1"] || []).concat(node["2"] || []);
+        out.exact = true;
+        out.materi = rows.length > 0;
+        out.cp = rows.some(function (row) { return Array.isArray(row) && row[1] && String(row[1]).trim(); });
+      }
+    } catch (e) {}
+    if (!out.cp) {
+      var fase = this.faseOf(kelas);
+      out.cp = !!(this.CP[key] && this.CP[key][fase]) || !!(this.CP[mapel] && this.CP[mapel][fase]);
+    }
+    return out;
+  },
+
   materiList: function (mapel, jenjang, kelas, semester) {
     // Alias mapel: nama di form -> key di GWMateri
     var alias = {
       "PPKn": jenjang === "SMA" || jenjang === "SMK" ? "PPKn-SMA" : "PPKn",
       "Informatika": (jenjang === "SMA" || jenjang === "SMK") ? "Informatika-SMA" : "Informatika",
-      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : "Bahasa Inggris"
+      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : (jenjang === "SMK" ? "Bahasa Inggris-SMK" : "Bahasa Inggris"),
+      "Matematika": jenjang === "SMK" ? "Matematika-SMK" : "Matematika",
+      "Bahasa Indonesia": jenjang === "SMK" ? "Bahasa Indonesia-SMK" : "Bahasa Indonesia",
+      "PJOK": jenjang === "SMK" ? "PJOK-SMK" : "PJOK",
+      "Sejarah": jenjang === "SMK" ? "Sejarah-SMK" : "Sejarah",
+      "Koding dan Kecerdasan Artifisial": "Koding dan Kecerdasan Artifisial"
     };
     var key = alias[mapel] || mapel;
     // Data riset (GWMateri): "Mapel" -> "Jenjang" -> "Kelas" -> "1"/"2" -> [[materi, CP], ...]
@@ -254,9 +306,9 @@ var GWMaster = {
       if (typeof GWMateri !== "undefined" && GWMateri[key]) {
         var jm = GWMateri[key];
         // SMK memakai data SMA
-        var node = jm[jenjang] || (jenjang === "SMK" ? jm["SMA"] : null) || jm["SD"] || jm["SMP"] || jm["SMA"];
+        var node = jm[jenjang];
         if (node) {
-          var kn = (kelas && node[kelas]) || node[Object.keys(node)[0]];
+          var kn = kelas ? node[kelas] : null;
           if (kn) {
             if (semester && kn[semester]) return kn[semester];
             // gabung semua semester
@@ -267,12 +319,8 @@ var GWMaster = {
         }
       }
     } catch (e) {}
-    // Fallback: format lama MATERI (per mapel per semester)
-    var m = this.MATERI[key] || this.MATERI[mapel];
-    if (!m) return [];
-    if (semester && m[semester]) return m[semester].map(function (t) { return [t, ""]; });
-    if (m["1"] || m["2"]) return (m["1"] || []).concat(m["2"] || []).map(function (t) { return [t, ""]; });
-    return Array.isArray(m) ? m.map(function (t) { return [t, ""]; }) : [];
+    // Jangan fallback lintas jenjang/kelas; data generik berisiko salah konteks.
+    return [];
   },
 
   // CP yang sesuai dengan materi terpilih (untuk dropdown CP)
