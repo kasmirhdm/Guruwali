@@ -268,7 +268,12 @@ var GWMaster = {
     var alias = {
       "PPKn": jenjang === "SMA" || jenjang === "SMK" ? "PPKn-SMA" : "PPKn",
       "Informatika": (jenjang === "SMA" || jenjang === "SMK") ? "Informatika-SMA" : "Informatika",
-      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : "Bahasa Inggris"
+      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : (jenjang === "SMK" ? "Bahasa Inggris-SMK" : "Bahasa Inggris"),
+      "Matematika": jenjang === "SMK" ? "Matematika-SMK" : "Matematika",
+      "Bahasa Indonesia": jenjang === "SMK" ? "Bahasa Indonesia-SMK" : "Bahasa Indonesia",
+      "PJOK": jenjang === "SMK" ? "PJOK-SMK" : "PJOK",
+      "Sejarah": jenjang === "SMK" ? "Sejarah-SMK" : "Sejarah",
+      "Koding dan Kecerdasan Artifisial": "Koding dan Kecerdasan Artifisial"
     };
     var key = alias[mapel] || mapel;
     var out = { mapel: mapel || "", jenjang: jenjang || "", kelas: kelas || "", semester: semester || "", materi: false, cp: false, exact: false };
