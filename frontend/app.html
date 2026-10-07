@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aplikasi — GuruWali</title>
+<title>GuruWali — Ruang Kerja AI Guru</title>
 <link rel="stylesheet" href="/css/style.css?v=11">
 <link rel="stylesheet" href="/css/generators.css">
 </head>
@@ -37,35 +37,52 @@
 <main class="container app-main">
   <!-- AUTH -->
   <section id="authBox" class="auth-box hidden">
-    <div class="auth-tabs">
-      <button id="tabMasuk" class="auth-tab active">Masuk</button>
-      <button id="tabDaftar" class="auth-tab">Daftar</button>
-    </div>
-    <form id="loginForm" class="auth-form">
-      <h2>Masuk ke GuruWali</h2>
-      <label>Email<input type="email" id="loginEmail" required autocomplete="email"></label>
-      <label>Kata sandi<input type="password" id="loginPass" required autocomplete="current-password"></label>
-      <p class="form-msg" id="loginMsg"></p>
-      <button class="btn btn-primary btn-block" type="submit">Masuk</button>
-    </form>
-    <form id="registerForm" class="auth-form hidden">
-      <h2>Daftar Akun Gratis</h2>
-      <label>Nama lengkap<input type="text" id="regNama" required></label>
-      <label>Email<input type="email" id="regEmail" required autocomplete="email"></label>
-      <label>Kata sandi (min. 6 karakter)<input type="password" id="regPass" required minlength="6" autocomplete="new-password"></label>
-      <div class="form-row">
-        <label>Sekolah<input type="text" id="regSekolah"></label>
-        <label>Mata pelajaran<input type="text" id="regMapel"></label>
+    <div class="auth-shell">
+      <div class="auth-showcase">
+        <a class="auth-brand" href="/"><span class="auth-brand-mark">G</span><span>GuruWali</span></a>
+        <span class="auth-eyebrow">AI untuk Guru Indonesia</span>
+        <h1 id="authHeadline">Selamat datang kembali.</h1>
+        <p class="auth-copy">Siapkan perangkat ajar, soal, materi, penilaian, dan administrasi sekolah lebih cepat dengan satu ruang kerja AI.</p>
+        <div class="auth-benefits">
+          <div><span>✓</span><strong>29+ generator</strong><small>untuk kebutuhan guru</small></div>
+          <div><span>✓</span><strong>11 dokumen sekali input</strong><small>dari satu data pembelajaran</small></div>
+          <div><span>✓</span><strong>Riwayat &amp; ekspor</strong><small>siap dilanjutkan kapan saja</small></div>
+        </div>
       </div>
-      <label>Jenjang
-        <select id="regJenjang">
-          <option value="">— Pilih —</option>
-          <option>SD</option><option>SMP</option><option>SMA</option><option>SMK</option>
-        </select>
-      </label>
-      <p class="form-msg" id="regMsg"></p>
-      <button class="btn btn-primary btn-block" type="submit">Daftar Gratis</button>
-    </form>
+      <div class="auth-panel">
+        <div class="auth-tabs">
+          <button id="tabMasuk" class="auth-tab active">Masuk</button>
+          <button id="tabDaftar" class="auth-tab">Daftar</button>
+        </div>
+        <form id="loginForm" class="auth-form">
+          <div class="auth-heading"><h2>Masuk ke GuruWali</h2><p>Gunakan akun Anda untuk melanjutkan.</p></div>
+          <label>Email<input type="email" id="loginEmail" required autocomplete="email" placeholder="nama@email.com"></label>
+          <label>Kata sandi<input type="password" id="loginPass" required autocomplete="current-password" placeholder="Masukkan kata sandi"></label>
+          <p class="form-msg" id="loginMsg"></p>
+          <button class="btn btn-primary btn-block auth-submit" type="submit">Masuk ke Dashboard</button>
+          <p class="auth-note">Belum punya akun? <button type="button" class="auth-link" id="switchRegister">Daftar gratis</button></p>
+        </form>
+        <form id="registerForm" class="auth-form hidden">
+          <div class="auth-heading"><h2>Buat akun GuruWali</h2><p>Mulai dengan akun gratis untuk mencoba GuruWali.</p></div>
+          <label>Nama lengkap<input type="text" id="regNama" required autocomplete="name" placeholder="Nama Anda"></label>
+          <label>Email<input type="email" id="regEmail" required autocomplete="email" placeholder="nama@email.com"></label>
+          <label>Kata sandi <span class="label-soft">(min. 6 karakter)</span><input type="password" id="regPass" required minlength="6" autocomplete="new-password" placeholder="Buat kata sandi"></label>
+          <div class="form-row">
+            <label>Sekolah<input type="text" id="regSekolah" placeholder="Nama sekolah"></label>
+            <label>Mata pelajaran<input type="text" id="regMapel" placeholder="Contoh: Matematika"></label>
+          </div>
+          <label>Jenjang
+            <select id="regJenjang">
+              <option value="">— Pilih —</option>
+              <option>SD</option><option>SMP</option><option>SMA</option><option>SMK</option>
+            </select>
+          </label>
+          <p class="form-msg" id="regMsg"></p>
+          <button class="btn btn-primary btn-block auth-submit" type="submit">Buat Akun Gratis</button>
+          <p class="auth-note">Sudah punya akun? <button type="button" class="auth-link" id="switchLogin">Masuk</button></p>
+        </form>
+      </div>
+    </div>
   </section>
 
   <!-- BERANDA -->
