@@ -5,7 +5,7 @@ Env:
   GURUWALI_AI_KEY    API key Invibuilder (gateway multi-model) — prioritas utama
   GURUWALI_GEMINI_KEY API key Gemini (fallback bila AI_KEY kosong)
   GURUWALI_AI_BASE   base URL kustom (default: Invibuilder bila AI_KEY ada, else Gemini)
-  GURUWALI_MODEL     model default Gemini (default: gemini-2.5-flash-lite)
+  GURUWALI_MODEL     model default Gemini (default: gemini-flash-lite-latest)
 """
 import json
 import os
