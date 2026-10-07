@@ -113,6 +113,7 @@
     });
     $("appNav").classList.remove("open");
     if (name === "riwayat") loadDocs();
+    if (name === "dokumen") { loadDocumentWorkspace(); }
     if (name === "beranda") { loadRecent(); refreshQuotaUI(); }
   }
 
