@@ -39,17 +39,12 @@ var GWMaster = {
 
   SEMESTER: ["1 (Ganjil)", "2 (Genap)"],
 
-  // Daftar mapel yang benar-benar tampil untuk kelas terpilih.
-  // Koding dan Kecerdasan Artifisial merupakan mapel pilihan yang mulai
-  // diterapkan bertahap pada kelas 5, 7, dan 10.
   mapelList: function (jenjang, kelas) {
     var list = (this.MAPEL[jenjang] || []).slice();
     var k = parseInt(kelas, 10);
     if ((jenjang === "SD" && k >= 5) || (jenjang === "SMP" && k >= 7) ||
         ((jenjang === "SMA" || jenjang === "SMK") && k >= 10)) {
-      if (list.indexOf("Koding dan Kecerdasan Artifisial") < 0) {
-        list.push("Koding dan Kecerdasan Artifisial");
-      }
+      if (list.indexOf("Koding dan Kecerdasan Artifisial") < 0) list.push("Koding dan Kecerdasan Artifisial");
     }
     return list;
   },
@@ -238,12 +233,13 @@ var GWMaster = {
       F: ["Peserta didik dapat mengembangkan aplikasi sederhana dan mengevaluasi keamanan sistem informasi.",
           "Peserta didik dapat memanfaatkan teknologi untuk kewirausahaan digital secara bertanggung jawab."]
     }
-    "Koding dan Kecerdasan Artifisial": {
-      C: ["Peserta didik memahami pola, algoritma, data, dan penggunaan teknologi AI secara aman dan bertanggung jawab."],
-      D: ["Peserta didik menerapkan berpikir komputasional, dasar pemrograman, data, dan konsep AI untuk memecahkan masalah sederhana secara bertanggung jawab."],
-      E: ["Peserta didik merancang solusi koding dan AI sederhana, menggunakan data secara tepat, serta menjelaskan risiko, etika, dan dampak penggunaan AI."],
-      F: ["Peserta didik mengembangkan solusi koding dan AI yang lebih terstruktur, mengevaluasi hasilnya, dan mempertimbangkan keamanan, etika, bias, serta dampaknya."]
-    },
+  },
+
+  "Koding dan Kecerdasan Artifisial": {
+    C: ["Peserta didik memahami pola, algoritma, data, dan penggunaan teknologi AI secara aman dan bertanggung jawab."],
+    D: ["Peserta didik menerapkan berpikir komputasional, dasar pemrograman, data, dan konsep AI untuk memecahkan masalah sederhana secara bertanggung jawab."],
+    E: ["Peserta didik merancang solusi koding dan AI sederhana, menggunakan data secara tepat, serta menjelaskan risiko, etika, dan dampak penggunaan AI."],
+    F: ["Peserta didik mengembangkan solusi koding dan AI yang lebih terstruktur, mengevaluasi hasilnya, dan mempertimbangkan keamanan, etika, bias, serta dampaknya."]
   },
 
   /* Fase dari nomor kelas: A:1-2, B:3-4, C:5-6, D:7-9, E:10, F:11-12 */
@@ -263,7 +259,6 @@ var GWMaster = {
     return [];
   },
 
-  // Status cakupan data untuk kombinasi yang dipilih.
   coverage: function (mapel, jenjang, kelas, semester) {
     var alias = {
       "PPKn": jenjang === "SMA" || jenjang === "SMK" ? "PPKn-SMA" : "PPKn",
@@ -280,9 +275,7 @@ var GWMaster = {
     try {
       if (typeof GWMateri !== "undefined" && GWMateri[key] && GWMateri[key][jenjang] && GWMateri[key][jenjang][kelas]) {
         var node = GWMateri[key][jenjang][kelas];
-        var rows = [];
-        if (semester && node[semester]) rows = node[semester];
-        else rows = (node["1"] || []).concat(node["2"] || []);
+        var rows = semester && node[semester] ? node[semester] : (node["1"] || []).concat(node["2"] || []);
         out.exact = true;
         out.materi = rows.length > 0;
         out.cp = rows.some(function (row) { return Array.isArray(row) && row[1] && String(row[1]).trim(); });
@@ -300,7 +293,12 @@ var GWMaster = {
     var alias = {
       "PPKn": jenjang === "SMA" || jenjang === "SMK" ? "PPKn-SMA" : "PPKn",
       "Informatika": (jenjang === "SMA" || jenjang === "SMK") ? "Informatika-SMA" : "Informatika",
-      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : "Bahasa Inggris"
+      "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : (jenjang === "SMK" ? "Bahasa Inggris-SMK" : "Bahasa Inggris"),
+      "Matematika": jenjang === "SMK" ? "Matematika-SMK" : "Matematika",
+      "Bahasa Indonesia": jenjang === "SMK" ? "Bahasa Indonesia-SMK" : "Bahasa Indonesia",
+      "PJOK": jenjang === "SMK" ? "PJOK-SMK" : "PJOK",
+      "Sejarah": jenjang === "SMK" ? "Sejarah-SMK" : "Sejarah",
+      "Koding dan Kecerdasan Artifisial": "Koding dan Kecerdasan Artifisial"
     };
     var key = alias[mapel] || mapel;
     // Data riset (GWMateri): "Mapel" -> "Jenjang" -> "Kelas" -> "1"/"2" -> [[materi, CP], ...]
@@ -308,13 +306,12 @@ var GWMaster = {
       if (typeof GWMateri !== "undefined" && GWMateri[key]) {
         var jm = GWMateri[key];
         // SMK memakai data SMA
-        // Hanya gunakan data untuk jenjang dan kelas yang benar-benar diminta.
-        // Jangan fallback ke jenjang/kelas lain karena dapat menghasilkan materi/CP yang salah.
         var node = jm[jenjang];
         if (node) {
           var kn = kelas ? node[kelas] : null;
           if (kn) {
             if (semester && kn[semester]) return kn[semester];
+            // gabung semua semester
             var all = [];
             ["1", "2"].forEach(function (s) { if (kn[s]) all = all.concat(kn[s]); });
             if (all.length) return all;
@@ -322,9 +319,7 @@ var GWMaster = {
         }
       }
     } catch (e) {}
-    // Tidak ada fallback lintas jenjang/kelas.
-    // MATERI lama sengaja tidak dipakai di sini karena isinya generik dan
-    // dapat membuat materi kelas lain tampak seolah-olah sesuai.
+    // Jangan fallback lintas jenjang/kelas; data generik berisiko salah konteks.
     return [];
   },
 
