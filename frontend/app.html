@@ -299,6 +299,22 @@
             <option value="tanpa">Tanpa tanda tangan</option>
           </select>
         </label>
+        <label>Penggunaan kop dokumen
+          <select id="pfKopMode">
+            <option value="admin">Kop dokumen administrasi</option>
+            <option value="semua">Kop semua dokumen formal</option>
+            <option value="tanpa">Tanpa kop</option>
+          </select>
+        </label>
+        <div class="form-row">
+          <label>Judul kop<input type="text" id="pfKopJudul" maxlength="200"></label>
+          <label>Subjudul kop<input type="text" id="pfKopSubjudul" maxlength="200"></label>
+        </div>
+        <div class="form-row">
+          <label>Telepon<input type="text" id="pfKopTelp" maxlength="60"></label>
+          <label>Email<input type="text" id="pfKopEmail" maxlength="120"></label>
+        </div>
+        <label>Alamat tambahan kop<input type="text" id="pfKopWebsite" maxlength="160"></label>
       </details>
       <p class="form-msg" id="pfMsg"></p>
       <button class="btn btn-primary" type="submit">Simpan Profil</button>
