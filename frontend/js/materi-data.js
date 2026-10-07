@@ -1678,6 +1678,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"Seni Rupa-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Eksplorasi Unsur Rupa",
+          ""
+        ],
+        [
+          "Menggambar",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Ilustrasi",
+          ""
+        ],
+        [
+          "Karya Kriya",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Desain Visual",
+          ""
+        ],
+        [
+          "Pameran",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Eksplorasi Unsur Rupa",
+          ""
+        ],
+        [
+          "Karya Kriya",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Menggambar",
+          ""
+        ],
+        [
+          "Desain Visual",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Ilustrasi",
+          ""
+        ],
+        [
+          "Pameran",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
