@@ -327,7 +327,13 @@
       nip_kepala: state.user.nip_kepala || "",
       jabatan_guru: state.user.jabatan_guru || "Guru",
       nip_guru: state.user.nip_guru || "",
-      signature_mode: state.user.signature_mode || "guru-kepala"
+      signature_mode: state.user.signature_mode || "guru-kepala",
+      kop_mode: state.user.kop_mode || "admin",
+      kop_judul: state.user.kop_judul || "",
+      kop_subjudul: state.user.kop_subjudul || "",
+      kop_telp: state.user.kop_telp || "",
+      kop_email: state.user.kop_email || "",
+      kop_website: state.user.kop_website || ""
     };
   }
 
