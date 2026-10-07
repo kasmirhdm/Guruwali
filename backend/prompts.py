@@ -469,6 +469,18 @@ def build_prompt(gen_type, inputs):
     extra = ""
     signature_types = {"modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
                        "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"}
+    kop_types = {"surat-tugas", "berita-acara", "proposal"}
+    if gen_type in kop_types:
+        extra += (
+            "\nATURAN KOP DOKUMEN:\n"
+            "Dokumen ini termasuk dokumen yang umumnya menggunakan kop sekolah. "
+            "Jika kop_mode bukan 'tanpa', buat kop di bagian paling atas sebelum judul dokumen. "
+            "Gunakan data kop yang diberikan apa adanya: [JUDUL KOP], [SUBJUDUL KOP], nama sekolah, "
+            "alamat, NPSN, telepon, email, dan informasi kontak lain. Jangan mengarang data yang kosong; "
+            "gunakan placeholder [JUDUL KOP], [SUBJUDUL KOP], [ALAMAT SEKOLAH], [NPSN], [TELEPON], [EMAIL]. "
+            "Setelah kop, buat garis pemisah yang jelas. Untuk kop_mode 'admin', jangan menambahkan kop "
+            "ke dokumen non-administrasi; untuk 'semua', ikuti aturan ini pada dokumen formal."
+        )
     if gen_type in signature_types:
         extra += (
             "\nATURAN TANDA TANGAN DOKUMEN:\n"
