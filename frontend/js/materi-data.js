@@ -1465,6 +1465,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"Informatika-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Berpikir Komputasional",
+          ""
+        ],
+        [
+          "Sistem Komputer",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Jaringan dan Internet",
+          ""
+        ],
+        [
+          "Data",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Algoritma dan Pemrograman",
+          ""
+        ],
+        [
+          "Keamanan Siber",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Berpikir Komputasional",
+          ""
+        ],
+        [
+          "Data",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Sistem Komputer",
+          ""
+        ],
+        [
+          "Algoritma dan Pemrograman",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Jaringan dan Internet",
+          ""
+        ],
+        [
+          "Keamanan Siber",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
