@@ -1394,6 +1394,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"PPKn-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Pancasila",
+          ""
+        ],
+        [
+          "Konstitusi",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Kebinekaan",
+          ""
+        ],
+        [
+          "Demokrasi",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Hak dan Kewajiban",
+          ""
+        ],
+        [
+          "HAM",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Pancasila",
+          ""
+        ],
+        [
+          "Demokrasi",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Konstitusi",
+          ""
+        ],
+        [
+          "Hak dan Kewajiban",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Kebinekaan",
+          ""
+        ],
+        [
+          "HAM",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
