@@ -61,7 +61,8 @@ var GWCascade = (function () {
   function updateMapel(form) {
     var m = field(form, "mapel");
     if (!m || m.tagName !== "SELECT") return;
-    var list = M.MAPEL[currentJenjang(form)] || [];
+    var kelas = field(form, "kelas");
+    var list = M.mapelList ? M.mapelList(currentJenjang(form), kelas ? kelas.value : "") : (M.MAPEL[currentJenjang(form)] || []);
     var prev = m.value;
     fillSelect(m, list, phOf(m));
     if (list.indexOf(prev) >= 0) m.value = prev;
