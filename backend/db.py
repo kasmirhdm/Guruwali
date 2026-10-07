@@ -14,6 +14,14 @@ CREATE TABLE IF NOT EXISTS users (
     sekolah TEXT DEFAULT '',
     mapel TEXT DEFAULT '',
     jenjang TEXT DEFAULT '',
+    npsn TEXT DEFAULT '',
+    alamat_sekolah TEXT DEFAULT '',
+    kota_sekolah TEXT DEFAULT '',
+    nama_kepala TEXT DEFAULT '',
+    nip_kepala TEXT DEFAULT '',
+    jabatan_guru TEXT DEFAULT 'Guru',
+    nip_guru TEXT DEFAULT '',
+    signature_mode TEXT DEFAULT 'guru-kepala',
     quota_used INTEGER DEFAULT 0,
     quota_limit INTEGER DEFAULT 5,
     is_pro INTEGER DEFAULT 0,
@@ -51,6 +59,21 @@ def init_db():
     conn = get_conn()
     try:
         conn.executescript(SCHEMA)
+        # Migrasi ringan untuk instalasi lama yang sudah memiliki users.
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+        migrations = {
+            "npsn": "TEXT DEFAULT ''",
+            "alamat_sekolah": "TEXT DEFAULT ''",
+            "kota_sekolah": "TEXT DEFAULT ''",
+            "nama_kepala": "TEXT DEFAULT ''",
+            "nip_kepala": "TEXT DEFAULT ''",
+            "jabatan_guru": "TEXT DEFAULT 'Guru'",
+            "nip_guru": "TEXT DEFAULT ''",
+            "signature_mode": "TEXT DEFAULT 'guru-kepala'",
+        }
+        for name, definition in migrations.items():
+            if name not in existing:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {name} {definition}")
         conn.commit()
     finally:
         conn.close()
