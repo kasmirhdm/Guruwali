@@ -275,6 +275,31 @@
         </label>
         <label>Kuota<input type="text" id="pfQuota" disabled></label>
       </div>
+      <details class="profile-signature" open>
+        <summary>Identitas Sekolah &amp; Tanda Tangan Dokumen</summary>
+        <p class="muted small">Data ini dipakai otomatis pada dokumen formal. GuruWali tidak mengarang nama atau NIP yang belum diisi.</p>
+        <div class="form-row">
+          <label>NPSN<input type="text" id="pfNpsn" maxlength="30" placeholder="Opsional"></label>
+          <label>Kota/Kabupaten<input type="text" id="pfKota" maxlength="100" placeholder="Contoh: Indragiri Hilir"></label>
+        </div>
+        <label>Alamat sekolah<input type="text" id="pfAlamat" maxlength="200" placeholder="Alamat lengkap sekolah"></label>
+        <div class="form-row">
+          <label>Nama kepala sekolah<input type="text" id="pfKepala" maxlength="200"></label>
+          <label>NIP kepala sekolah<input type="text" id="pfNipKepala" maxlength="50"></label>
+        </div>
+        <div class="form-row">
+          <label>Jabatan guru<input type="text" id="pfJabatan" maxlength="100" value="Guru"></label>
+          <label>NIP guru<input type="text" id="pfNipGuru" maxlength="50"></label>
+        </div>
+        <label>Format tanda tangan
+          <select id="pfSignatureMode">
+            <option value="guru-kepala">Guru + Kepala Sekolah</option>
+            <option value="guru">Guru saja</option>
+            <option value="kepala">Kepala sekolah saja</option>
+            <option value="tanpa">Tanpa tanda tangan</option>
+          </select>
+        </label>
+      </details>
       <p class="form-msg" id="pfMsg"></p>
       <button class="btn btn-primary" type="submit">Simpan Profil</button>
     </form>
