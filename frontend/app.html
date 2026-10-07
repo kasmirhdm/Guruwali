@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aplikasi — GuruWali</title>
+<link rel="stylesheet" href="/css/style.css?v=11">
+<link rel="stylesheet" href="/css/generators.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a class="brand" href="/"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> GuruWali</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+    <nav class="topnav appnav" id="appNav">
+      <a href="#beranda" data-section="beranda" class="active">Beranda</a>
+      <a href="#perangkat" data-section="perangkat">Perangkat Ajar</a>
+      <a href="#materi" data-section="materi">Materi</a>
+      <a href="#soal" data-section="soal">Soal &amp; Evaluasi</a>
+      <a href="#penilaian" data-section="penilaian">Penilaian</a>
+      <a href="#media" data-section="media">Media</a>
+      <a href="#alat" data-section="alat">Alat Bantu</a>
+      <a href="#admin" data-section="admin">Administrasi</a>
+      <a href="#dokumen" data-section="dokumen">Dokumen &amp; File</a>
+      <a href="#chat" data-section="chat">Chat AI</a>
+      <a href="#riwayat" data-section="riwayat">Riwayat</a>
+      <a href="#profil" data-section="profil">Profil</a>
+    </nav>
+    <div class="topbar-actions">
+      <select id="modelSelect" class="model-select hidden" title="Model AI"></select>
+      <span id="userBadge" class="user-badge hidden"></span>
+      <button id="logoutBtn" class="btn btn-ghost hidden">Keluar</button>
+    </div>
+  </div>
+</header>
+
+<main class="container app-main">
+  <!-- AUTH -->
+  <section id="authBox" class="auth-box hidden">
+    <div class="auth-tabs">
+      <button id="tabMasuk" class="auth-tab active">Masuk</button>
+      <button id="tabDaftar" class="auth-tab">Daftar</button>
+    </div>
+    <form id="loginForm" class="auth-form">
+      <h2>Masuk ke GuruWali</h2>
+      <label>Email<input type="email" id="loginEmail" required autocomplete="email"></label>
+      <label>Kata sandi<input type="password" id="loginPass" required autocomplete="current-password"></label>
+      <p class="form-msg" id="loginMsg"></p>
+      <button class="btn btn-primary btn-block" type="submit">Masuk</button>
+    </form>
+    <form id="registerForm" class="auth-form hidden">
+      <h2>Daftar Akun Gratis</h2>
+      <label>Nama lengkap<input type="text" id="regNama" required></label>
+      <label>Email<input type="email" id="regEmail" required autocomplete="email"></label>
+      <label>Kata sandi (min. 6 karakter)<input type="password" id="regPass" required minlength="6" autocomplete="new-password"></label>
+      <div class="form-row">
+        <label>Sekolah<input type="text" id="regSekolah"></label>
+        <label>Mata pelajaran<input type="text" id="regMapel"></label>
+      </div>
+      <label>Jenjang
+        <select id="regJenjang">
+          <option value="">— Pilih —</option>
+          <option>SD</option><option>SMP</option><option>SMA</option><option>SMK</option>
+        </select>
+      </label>
+      <p class="form-msg" id="regMsg"></p>
+      <button class="btn btn-primary btn-block" type="submit">Daftar Gratis</button>
+    </form>
+  </section>
+
+  <!-- BERANDA -->
+  <section id="sec-beranda" class="app-section">
+    <h2>Beranda</h2>
+    <div class="package-card" id="packageCard">
+      <h3><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> SATU INPUT → 11 DOKUMEN</h3>
+      <p class="muted">Isi sekali, AI buatkan 11 dokumen perangkat mengajar lengkap secara berurutan.</p>
+      <form id="packageForm" class="form-card">
+        <div class="form-row">
+          <label>Mata pelajaran<input type="text" id="pkMapel" name="mapel" required></label>
+          <label>Jenjang
+            <select id="pkJenjang" name="jenjang">
+              <option>SD</option><option>SMP</option><option>SMA</option><option>SMK</option>
+            </select>
+          </label>
+          <label>Kelas<input type="text" id="pkKelas" name="kelas" placeholder="cth: 7" required></label>
+          <label>Semester
+            <select id="pkSemester" name="semester">
+              <option value="">— Pilih —</option>
+            </select>
+          </label>
+        </div>
+        <label>Materi pokok
+          <select id="pkMateriSel" class="gw-materi-sel" required><option value="">— Pilih materi —</option></select>
+          <input type="text" id="pkMateri" name="materi" class="gw-materi-custom hidden" placeholder="Ketik materi manual..." required style="margin-top:6px">
+        </label>
+        <div class="form-row">
+          <label>Alokasi waktu<input type="text" id="pkAlokasi" name="alokasi" placeholder="cth: 4 x 40 menit"></label>
+          <label>Kuota tersisa<input type="text" id="pkQuota" disabled></label>
+        </div>
+        <label>Capaian Pembelajaran (tempel dari dokumen resmi)
+          <textarea id="pkCp" name="cp" rows="3" placeholder="Tempel CP di sini. Jika kosong, AI tidak akan mengarang CP."></textarea>
+        </label>
+        <p class="form-msg" id="pkMsg"></p>
+        <button class="btn btn-primary btn-block" type="submit"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Buatkan 11 Dokumen</button>
+      </form>
+      <div id="packageProgress" class="pkg-progress hidden"></div>
+    </div>
+    <h3>Akses Cepat</h3>
+    <p class="muted">Pilih kebutuhan Anda:</p>
+    <div class="grid-4" id="quickAccess"></div>
+    <h3>Dokumen Terakhir</h3>
+    <div id="recentDocs" class="doc-list"><p class="muted">Belum ada dokumen.</p></div>
+  </section>
+
+  <!-- GENERATOR SECTIONS -->
+  <section id="sec-perangkat" class="app-section hidden">
+    <h2>Perangkat Ajar</h2>
+    <div id="res-perangkat"></div>
+    <div id="gen-perangkat" class="gen-list"></div>
+  </section>
+  <section id="sec-materi" class="app-section hidden">
+    <h2>Materi Pembelajaran</h2>
+    <div id="res-materi"></div>
+    <div id="gen-materi" class="gen-list"></div>
+  </section>
+  <section id="sec-soal" class="app-section hidden">
+    <h2>Soal &amp; Evaluasi</h2>
+    <div id="res-soal"></div>
+    <div id="gen-soal" class="gen-list"></div>
+  </section>
+  <section id="sec-penilaian" class="app-section hidden">
+    <h2>Penilaian</h2>
+    <div class="placeholder-card"><p><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Modul Penilaian (input &amp; analisis nilai) segera hadir.</p></div>
+  </section>
+  <section id="sec-media" class="app-section hidden">
+    <h2>Media Pembelajaran</h2>
+    <div id="res-media"></div>
+    <div id="gen-media" class="gen-list"></div>
+  </section>
+  <section id="sec-alat" class="app-section hidden">
+    <h2>Alat Bantu Guru</h2>
+    <div id="res-alat"></div>
+    <div id="gen-alat" class="gen-list"></div>
+  </section>
+  <section id="sec-admin" class="app-section hidden">
+    <h2>Administrasi Sekolah</h2>
+    <div id="res-admin"></div>
+    <div id="gen-admin" class="gen-list"></div>
+  </section>
+  <section id="sec-dokumen" class="app-section hidden">
+    <h2>Dokumen &amp; File</h2>
+    <div class="placeholder-card"><p><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Upload &amp; tanya-jawab dokumen segera hadir.</p></div>
+  </section>
+  <section id="sec-chat" class="app-section hidden">
+    <h2>Chat AI Guru</h2>
+    <div id="chatBox" class="chat-box"></div>
+    <form id="chatForm" class="chat-form">
+      <input type="text" id="chatInput" placeholder="Tanya apa saja tentang pembelajaran…" autocomplete="off" required>
+      <button class="btn btn-primary" type="submit">Kirim</button>
+    </form>
+    <p class="muted small">Chat tidak tersimpan otomatis — klik <svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <strong>Simpan</strong> pada jawaban untuk menyimpan ke Riwayat.</p>
+  </section>
+
+  <!-- RIWAYAT -->
+  <section id="sec-riwayat" class="app-section hidden">
+    <h2>Riwayat &amp; Favorit</h2>
+    <div class="toolbar">
+      <select id="filterType">
+        <option value="">Semua jenis</option>
+      </select>
+      <label class="check"><input type="checkbox" id="filterFav"> Favorit saja</label>
+      <button class="btn btn-ghost" id="refreshDocs">Muat ulang</button>
+    </div>
+    <div id="docList" class="doc-list"><p class="muted">Memuat…</p></div>
+  </section>
+
+  <!-- PROFIL -->
+  <section id="sec-profil" class="app-section hidden">
+    <h2>Profil Guru</h2>
+    <form id="profileForm" class="form-card">
+      <label>Nama lengkap<input type="text" id="pfNama"></label>
+      <div class="form-row">
+        <label>Sekolah<input type="text" id="pfSekolah"></label>
+        <label>Mata pelajaran<input type="text" id="pfMapel"></label>
+      </div>
+      <div class="form-row">
+        <label>Jenjang
+          <select id="pfJenjang">
+            <option value="">— Pilih —</option>
+            <option>SD</option><option>SMP</option><option>SMA</option><option>SMK</option>
+          </select>
+        </label>
+        <label>Kuota<input type="text" id="pfQuota" disabled></label>
+      </div>
+      <p class="form-msg" id="pfMsg"></p>
+      <button class="btn btn-primary" type="submit">Simpan Profil</button>
+    </form>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container"><p>© 2026 GuruWali — Dibuat untuk guru Indonesia</p></div>
+</footer>
+
+<script src="/js/master-data.js"></script>
+<script src="/js/materi-data.js"></script>
+<script src="/js/cascade.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

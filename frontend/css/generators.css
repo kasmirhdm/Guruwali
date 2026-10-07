@@ -1,0 +1,69 @@
+/* GuruWali — komponen generator, hasil, chat, paket lengkap. */
+
+/* ===== kartu generator ===== */
+.gen-list { display: grid; gap: 12px; }
+.gen-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.gen-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; cursor: pointer; user-select: none;
+}
+.gen-head:hover { background: #f6f9fc; }
+.gen-head strong { font-size: 1.02rem; }
+.gen-head p { margin: 4px 0 0; }
+.gen-toggle { font-size: 1.2rem; color: var(--muted); }
+.gen-form { padding: 0 16px 16px; border-top: 1px dashed var(--border); padding-top: 12px; }
+.gen-form label { display: block; margin-bottom: 10px; font-weight: 600; font-size: 0.92rem; }
+.gen-form input[type="text"], .gen-form input[type="number"],
+.gen-form select, .gen-form textarea {
+  width: 100%; margin-top: 4px; padding: 9px 10px; font-size: 0.95rem;
+  border: 1px solid var(--border); border-radius: 8px; font-family: inherit;
+}
+.gen-form textarea { resize: vertical; }
+
+/* ===== panel hasil ===== */
+.result-panel {
+  background: var(--card); border: 2px solid var(--primary);
+  border-radius: 12px; padding: 16px; margin-bottom: 16px;
+}
+.result-panel h3 { margin-top: 0; }
+.result-content {
+  white-space: pre-wrap; font-family: inherit; font-size: 0.95rem;
+  line-height: 1.65; background: #f8fafc; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; max-height: 520px; overflow: auto; margin: 0 0 12px;
+}
+.result-actions { display: flex; align-items: center; gap: 12px; }
+.btn-copy { white-space: nowrap; }
+
+/* ===== chat ===== */
+.chat-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px; height: 420px; overflow-y: auto; margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.chat-msg {
+  max-width: 85%; padding: 10px 12px; border-radius: 12px; font-size: 0.95rem;
+}
+.chat-msg pre { white-space: pre-wrap; font-family: inherit; margin: 6px 0 0; line-height: 1.6; }
+.chat-msg.user { align-self: flex-end; background: var(--primary); color: #fff; }
+.chat-msg.ai { align-self: flex-start; background: #f1f5f9; }
+.chat-msg .btn-small { margin-top: 8px; font-size: 0.82rem; padding: 6px 10px; }
+.chat-form { display: flex; gap: 8px; }
+.chat-form input { flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; }
+
+/* ===== paket lengkap ===== */
+.package-card {
+  background: linear-gradient(135deg, #eef4ff, #f7f0ff);
+  border: 2px solid var(--primary); border-radius: 14px; padding: 18px; margin-bottom: 20px;
+}
+.package-card h3 { margin-top: 0; }
+.pkg-progress { margin-top: 12px; }
+.pkg-progress h4 { margin: 0 0 8px; }
+.pkg-row {
+  padding: 8px 10px; background: #fff; border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 6px; font-size: 0.92rem;
+}
+
+.small { font-size: 0.85rem; }
