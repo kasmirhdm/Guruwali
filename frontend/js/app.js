@@ -912,7 +912,10 @@
         npsn: $("pfNpsn").value, alamat_sekolah: $("pfAlamat").value,
         kota_sekolah: $("pfKota").value, nama_kepala: $("pfKepala").value,
         nip_kepala: $("pfNipKepala").value, jabatan_guru: $("pfJabatan").value,
-        nip_guru: $("pfNipGuru").value, signature_mode: $("pfSignatureMode").value
+        nip_guru: $("pfNipGuru").value, signature_mode: $("pfSignatureMode").value,
+        kop_mode: $("pfKopMode").value, kop_judul: $("pfKopJudul").value,
+        kop_subjudul: $("pfKopSubjudul").value, kop_telp: $("pfKopTelp").value,
+        kop_email: $("pfKopEmail").value, kop_website: $("pfKopWebsite").value
       }).then(function (res) {
         if (res.status === 200) {
           state.user = res.data.user; fillProfile();
