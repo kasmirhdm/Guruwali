@@ -1020,6 +1020,65 @@ var GWMateri = {
   "SMA": { "10": { "1": [["Mata Pelajaran Kejuruan", ""]], "2": [["Mata Pelajaran Kejuruan", ""]] }, "11": { "1": [["Mata Pelajaran Kejuruan", ""]], "2": [["Mata Pelajaran Kejuruan", ""]] }, "12": { "1": [["Mata Pelajaran Kejuruan", ""], ["PKL", ""]], "2": [["Mata Pelajaran Kejuruan", ""], ["Uji Kompetensi", ""]] } }
 }
 
+
+/* ================= SMK COMMON SUBJECTS ================= */
+"Matematika-SMK": {
+  "SMK": {
+    "10": { "1": [["Bilangan dan Aljabar", "Peserta didik menerapkan konsep bilangan, aljabar, dan pemodelan dalam konteks kehidupan dan dunia kerja."], ["Geometri", "Peserta didik menerapkan konsep geometri untuk menyelesaikan masalah kontekstual."]], "2": [["Statistika", "Peserta didik menganalisis dan menyajikan data untuk mengambil keputusan."], ["Peluang", "Peserta didik menggunakan konsep peluang pada masalah kontekstual."]] },
+    "11": { "1": [["Fungsi dan Pemodelan", "Peserta didik menggunakan fungsi untuk memodelkan situasi kontekstual."], ["Trigonometri", "Peserta didik menerapkan trigonometri pada masalah pengukuran."]], "2": [["Statistika Lanjutan", "Peserta didik menganalisis data dan menarik kesimpulan."], ["Matriks dan Vektor", "Peserta didik menggunakan matriks dan vektor pada masalah terapan."]] },
+    "12": { "1": [["Kalkulus Dasar", "Peserta didik menggunakan konsep perubahan untuk memecahkan masalah terapan."], ["Pemodelan", "Peserta didik membangun model matematika dari masalah dunia kerja."]], "2": [["Statistika dan Probabilitas", "Peserta didik mengevaluasi data dan ketidakpastian untuk pengambilan keputusan."], ["Proyek Matematika", "Peserta didik menyelesaikan masalah nyata dengan model matematika."]] }
+  }
+},
+"Bahasa Indonesia-SMK": {
+  "SMK": {
+    "10": { "1": [["Teks Informasi dan Dunia Kerja", "Peserta didik memahami dan mengevaluasi informasi untuk konteks sosial dan kerja."], ["Teks Prosedur", "Peserta didik memahami dan menghasilkan teks prosedur yang runtut."]], "2": [["Presentasi", "Peserta didik menyampaikan informasi secara lisan dengan efektif."], ["Teks Eksposisi", "Peserta didik menyusun gagasan secara logis dan berbasis informasi."]] },
+    "11": { "1": [["Proposal dan Laporan", "Peserta didik menyusun proposal dan laporan sesuai konteks akademik atau dunia kerja."], ["Surat Lamaran", "Peserta didik menyusun surat lamaran dengan bahasa yang sesuai."]], "2": [["Wawancara", "Peserta didik berkomunikasi efektif dalam situasi wawancara."], ["Presentasi Profesional", "Peserta didik mempresentasikan informasi dengan media yang sesuai."]] },
+    "12": { "1": [["Karya Tulis", "Peserta didik menghasilkan karya tulis berdasarkan informasi yang dapat dipertanggungjawabkan."], ["Komunikasi Dunia Kerja", "Peserta didik menggunakan bahasa Indonesia secara efektif dalam konteks kerja."]], "2": [["Publikasi Digital", "Peserta didik menyunting dan memublikasikan teks dalam media digital."], ["Portofolio", "Peserta didik menyusun portofolio komunikasi dan karya."]] }
+  }
+},
+"Bahasa Inggris-SMK": {
+  "SMK": {
+    "10": { "1": [["Self Introduction and Workplace", "Peserta didik berkomunikasi sederhana untuk memperkenalkan diri dan konteks kerja."], ["Instructions", "Peserta didik memahami dan memberikan instruksi sederhana."]], "2": [["Describing Products", "Peserta didik mendeskripsikan benda, layanan, dan pekerjaan."], ["Procedure", "Peserta didik memahami dan menghasilkan teks prosedur."]] },
+    "11": { "1": [["Workplace Conversation", "Peserta didik melakukan percakapan dalam situasi kerja."], ["Email", "Peserta didik menulis pesan dan email sederhana untuk konteks kerja."]], "2": [["Job Interview", "Peserta didik berlatih komunikasi dalam wawancara kerja."], ["Presentation", "Peserta didik menyampaikan presentasi sederhana dalam bahasa Inggris."]] },
+    "12": { "1": [["Workplace Documents", "Peserta didik memahami dokumen fungsional dalam bahasa Inggris."], ["Professional Communication", "Peserta didik berkomunikasi secara tepat dalam konteks profesional."]], "2": [["Project Presentation", "Peserta didik mempresentasikan proyek menggunakan bahasa Inggris."], ["Career Portfolio", "Peserta didik menyusun portofolio sederhana untuk kesiapan kerja."]] }
+  }
+},
+"Koding dan Kecerdasan Artifisial": {
+  "SD": {
+    "5": { "1": [["Pola dan Algoritma", "Peserta didik mengenali pola dan menyusun langkah penyelesaian masalah sederhana."], "2": [["Data dan Literasi AI", "Peserta didik mengenali data dan menggunakan teknologi AI secara aman."]] },
+    "6": { "1": [["Pemrograman Visual", "Peserta didik membuat program sederhana berbasis blok."], "2": [["Proyek AI Sederhana", "Peserta didik menggunakan teknologi AI secara kreatif dan bertanggung jawab."]] }
+  },
+  "SMP": {
+    "7": { "1": [["Berpikir Komputasional", "Peserta didik menerapkan dekomposisi, pola, abstraksi, dan algoritma."], "2": [["Pemrograman Dasar", "Peserta didik membuat program sederhana dan menguji hasilnya."]] },
+    "8": { "1": [["Data dan Algoritma", "Peserta didik mengolah data dan merancang algoritma."], "2": [["AI dan Etika", "Peserta didik menjelaskan penggunaan AI, manfaat, risiko, dan etika."]] },
+    "9": { "1": [["Proyek Koding", "Peserta didik mengembangkan solusi komputasional sederhana."], "2": [["Proyek AI", "Peserta didik membuat prototipe AI sederhana dan mengevaluasi hasilnya."]] }
+  },
+  "SMA": {
+    "10": { "1": [["Pemrograman dan Algoritma", "Peserta didik merancang dan mengimplementasikan algoritma untuk masalah kontekstual."], "2": [["Data dan Dasar AI", "Peserta didik memahami data, model, dan penerapan AI dasar."]] },
+    "11": { "1": [["Pemodelan dan Machine Learning", "Peserta didik memahami alur data dan model machine learning sederhana."], "2": [["Proyek AI", "Peserta didik mengembangkan proyek AI sederhana dengan memperhatikan etika."]] },
+    "12": { "1": [["AI Lanjutan", "Peserta didik mengevaluasi model dan hasil sistem AI sederhana."], "2": [["Proyek Akhir Koding dan AI", "Peserta didik menyelesaikan proyek dan mempresentasikan dampaknya."]] }
+  },
+  "SMK": {
+    "10": { "1": [["Pemrograman dan Algoritma", "Peserta didik merancang solusi algoritmik untuk konteks kejuruan."], "2": [["Data dan Dasar AI", "Peserta didik memahami data dan penerapan AI sederhana di dunia kerja."]] },
+    "11": { "1": [["Machine Learning Dasar", "Peserta didik menerapkan alur data dan model machine learning sederhana."], "2": [["Proyek AI Kejuruan", "Peserta didik membuat solusi AI sederhana untuk kebutuhan bidang keahlian."]] },
+    "12": { "1": [["Evaluasi Sistem AI", "Peserta didik mengevaluasi akurasi, keamanan, bias, dan manfaat sistem AI."], "2": [["Proyek Akhir Koding dan AI", "Peserta didik mengembangkan dan mempresentasikan solusi koding/AI yang relevan dengan dunia kerja."]] }
+  }
+},
+"PJOK-SMK": {
+  "SMK": {
+    "10": { "1": [["Kebugaran Jasmani", ""], ["Permainan dan Olahraga", ""]], "2": [["Atletik", ""], ["Pola Hidup Sehat", ""]] },
+    "11": { "1": [["Kebugaran untuk Aktivitas Kerja", ""], ["Permainan Olahraga", ""]], "2": [["Aktivitas Ritmik", ""], ["Kesehatan Reproduksi", ""]] },
+    "12": { "1": [["Kebugaran dan Ergonomi", ""], ["Olahraga Pilihan", ""]], "2": [["Pencegahan Cedera", ""], ["Gaya Hidup Sehat", ""]] }
+  }
+},
+"Sejarah-SMK": {
+  "SMK": {
+    "10": { "1": [["Pengantar Ilmu Sejarah", ""], ["Sejarah Indonesia", ""]], "2": [["Kolonialisme", ""], ["Pergerakan Nasional", ""]] },
+    "11": { "1": [["Pendudukan Jepang", ""], ["Proklamasi", ""]], "2": [["Mempertahankan Kemerdekaan", ""], ["Demokrasi Indonesia", ""]] },
+    "12": { "1": [["Orde Baru", ""], ["Reformasi", ""]], "2": [["Indonesia Kontemporer", ""], ["Sejarah dan Dunia Kerja", ""]] }
+  }
+},
+
 };
 
 if (typeof module !== "undefined" && module.exports) module.exports = GWMateri;
