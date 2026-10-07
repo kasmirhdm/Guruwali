@@ -311,12 +311,10 @@ var GWMaster = {
         }
       }
     } catch (e) {}
-    // Fallback: format lama MATERI (per mapel per semester)
-    var m = this.MATERI[key] || this.MATERI[mapel];
-    if (!m) return [];
-    if (semester && m[semester]) return m[semester].map(function (t) { return [t, ""]; });
-    if (m["1"] || m["2"]) return (m["1"] || []).concat(m["2"] || []).map(function (t) { return [t, ""]; });
-    return Array.isArray(m) ? m.map(function (t) { return [t, ""]; }) : [];
+    // Tidak ada fallback lintas jenjang/kelas.
+    // MATERI lama sengaja tidak dipakai di sini karena isinya generik dan
+    // dapat membuat materi kelas lain tampak seolah-olah sesuai.
+    return [];
   },
 
   // CP yang sesuai dengan materi terpilih (untuk dropdown CP)
