@@ -32,17 +32,20 @@ FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 
 # Rate limit: 10 request/menit/IP untuk /api/*
 RATE_WINDOW = 60
-RATE_MAX = 10
+RATE_MAX = 60
+AI_RATE_MAX = 20
+AUTH_RATE_MAX = 10
 _rate = {}
 
 
-def rate_ok(ip):
+def rate_ok(ip, bucket="general", limit=RATE_MAX):
     t = time.time()
-    hits = [x for x in _rate.get(ip, []) if t - x < RATE_WINDOW]
-    if len(hits) >= RATE_MAX:
+    key = (bucket, ip)
+    hits = [x for x in _rate.get(key, []) if t - x < RATE_WINDOW]
+    if len(hits) >= limit:
         return False
     hits.append(t)
-    _rate[ip] = hits
+    _rate[key] = hits
     return True
 
 
@@ -142,7 +145,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if path.startswith("/api/"):
-            if not rate_ok(self.client_address[0]):
+            if not rate_ok(self.client_address[0], "general", RATE_MAX):
                 self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
                 return
             self._api_get(path, urllib.parse.parse_qs(parsed.query))
@@ -154,7 +157,9 @@ class Handler(BaseHTTPRequestHandler):
         if not parsed.path.startswith("/api/"):
             self._send_json(404, {"error": "Tidak ditemukan."})
             return
-        if not rate_ok(self.client_address[0]):
+        bucket = "ai" if parsed.path in ("/api/generate", "/api/generate-image") else ("auth" if parsed.path in ("/api/login", "/api/register") else "general")
+        limit = AI_RATE_MAX if bucket == "ai" else (AUTH_RATE_MAX if bucket == "auth" else RATE_MAX)
+        if not rate_ok(self.client_address[0], bucket, limit):
             self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
             return
         self._api_post(parsed.path)
