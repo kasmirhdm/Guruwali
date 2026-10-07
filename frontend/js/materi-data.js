@@ -1891,6 +1891,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"Seni Teater-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Dasar Akting",
+          ""
+        ],
+        [
+          "Naskah Drama",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Pantomim",
+          ""
+        ],
+        [
+          "Pementasan",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Penyutradaraan",
+          ""
+        ],
+        [
+          "Produksi Teater",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Dasar Akting",
+          ""
+        ],
+        [
+          "Pementasan",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Naskah Drama",
+          ""
+        ],
+        [
+          "Penyutradaraan",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Pantomim",
+          ""
+        ],
+        [
+          "Produksi Teater",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
