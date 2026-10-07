@@ -304,6 +304,12 @@
     $("pfJabatan").value = state.user.jabatan_guru || "Guru";
     $("pfNipGuru").value = state.user.nip_guru || "";
     $("pfSignatureMode").value = state.user.signature_mode || "guru-kepala";
+    $("pfKopMode").value = state.user.kop_mode || "admin";
+    $("pfKopJudul").value = state.user.kop_judul || "";
+    $("pfKopSubjudul").value = state.user.kop_subjudul || "";
+    $("pfKopTelp").value = state.user.kop_telp || "";
+    $("pfKopEmail").value = state.user.kop_email || "";
+    $("pfKopWebsite").value = state.user.kop_website || "";
     $("pfQuota").value = state.user.quota_used + " / " + state.user.quota_limit +
       (state.user.is_pro ? " (Pro)" : "");
   }
