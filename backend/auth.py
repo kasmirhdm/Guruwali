@@ -107,6 +107,14 @@ def public_user(row):
         "sekolah": row["sekolah"],
         "mapel": row["mapel"],
         "jenjang": row["jenjang"],
+        "npsn": row["npsn"],
+        "alamat_sekolah": row["alamat_sekolah"],
+        "kota_sekolah": row["kota_sekolah"],
+        "nama_kepala": row["nama_kepala"],
+        "nip_kepala": row["nip_kepala"],
+        "jabatan_guru": row["jabatan_guru"],
+        "nip_guru": row["nip_guru"],
+        "signature_mode": row["signature_mode"],
         "quota_used": row["quota_used"],
         "quota_limit": row["quota_limit"],
         "is_pro": bool(row["is_pro"]),
@@ -114,7 +122,7 @@ def public_user(row):
 
 
 def update_profile(user_id, fields):
-    allowed = ("nama", "sekolah", "mapel", "jenjang")
+    allowed = ("nama", "sekolah", "mapel", "jenjang", "npsn", "alamat_sekolah", "kota_sekolah", "nama_kepala", "nip_kepala", "jabatan_guru", "nip_guru", "signature_mode")
     sets = []
     vals = []
     for k in allowed:
