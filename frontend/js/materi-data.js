@@ -1820,6 +1820,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"Seni Tari-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Eksplorasi Gerak",
+          ""
+        ],
+        [
+          "Tari Tradisional",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Komposisi Tari",
+          ""
+        ],
+        [
+          "Apresiasi Tari",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Koreografi",
+          ""
+        ],
+        [
+          "Pementasan",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Eksplorasi Gerak",
+          ""
+        ],
+        [
+          "Apresiasi Tari",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Tari Tradisional",
+          ""
+        ],
+        [
+          "Koreografi",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Komposisi Tari",
+          ""
+        ],
+        [
+          "Pementasan",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
