@@ -705,8 +705,12 @@
       chatHistory.push({ role: "user", content: pesan });
       chatMsg("ai", "Mengetik…", false, true);
       var typing = $("chatBox").lastChild;
+      var context = chatHistory.slice(-12).map(function (m) {
+        return (m.role === "user" ? "GURU" : "GURUWALI AI") + ": " + m.content;
+      }).join("\n");
+      var chatPrompt = context ? "RIWAYAT PERCAKAPAN SEBELUMNYA:\n" + context + "\n\nPESAN TERBARU GURU:\n" + pesan : pesan;
       api("POST", "/api/generate", {
-        type: "chat-bebas", params: { pesan: pesan }, save: false, model: currentModelOverride()
+        type: "chat-bebas", params: { pesan: chatPrompt }, save: false, model: currentModelOverride()
       }).then(function (res) {
         typing.remove();
         if (res.status === 200) {
