@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS users (
     jabatan_guru TEXT DEFAULT 'Guru',
     nip_guru TEXT DEFAULT '',
     signature_mode TEXT DEFAULT 'guru-kepala',
+    kop_mode TEXT DEFAULT 'admin',
+    kop_judul TEXT DEFAULT '',
+    kop_subjudul TEXT DEFAULT '',
+    kop_telp TEXT DEFAULT '',
+    kop_email TEXT DEFAULT '',
+    kop_website TEXT DEFAULT '',
     quota_used INTEGER DEFAULT 0,
     quota_limit INTEGER DEFAULT 5,
     is_pro INTEGER DEFAULT 0,
@@ -70,6 +76,12 @@ def init_db():
             "jabatan_guru": "TEXT DEFAULT 'Guru'",
             "nip_guru": "TEXT DEFAULT ''",
             "signature_mode": "TEXT DEFAULT 'guru-kepala'",
+            "kop_mode": "TEXT DEFAULT 'admin'",
+            "kop_judul": "TEXT DEFAULT ''",
+            "kop_subjudul": "TEXT DEFAULT ''",
+            "kop_telp": "TEXT DEFAULT ''",
+            "kop_email": "TEXT DEFAULT ''",
+            "kop_website": "TEXT DEFAULT ''",
         }
         for name, definition in migrations.items():
             if name not in existing:
