@@ -1749,6 +1749,77 @@ var GWMateri = {
       ]
     }
   }
+},
+
+"Seni Musik-SMK": {
+  "SMK": {
+    "10": {
+      "1": [
+        [
+          "Bernyanyi",
+          ""
+        ],
+        [
+          "Ritme dan Melodi",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Ansambel",
+          ""
+        ],
+        [
+          "Apresiasi Musik",
+          ""
+        ]
+      ]
+    },
+    "11": {
+      "1": [
+        [
+          "Aransemen",
+          ""
+        ],
+        [
+          "Produksi Musik",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Bernyanyi",
+          ""
+        ],
+        [
+          "Apresiasi Musik",
+          ""
+        ]
+      ]
+    },
+    "12": {
+      "1": [
+        [
+          "Ritme dan Melodi",
+          ""
+        ],
+        [
+          "Aransemen",
+          ""
+        ]
+      ],
+      "2": [
+        [
+          "Ansambel",
+          ""
+        ],
+        [
+          "Produksi Musik",
+          ""
+        ]
+      ]
+    }
+  }
 }
 };
 
