@@ -296,8 +296,33 @@
     $("pfSekolah").value = state.user.sekolah || "";
     $("pfMapel").value = state.user.mapel || "";
     $("pfJenjang").value = state.user.jenjang || "";
+    $("pfNpsn").value = state.user.npsn || "";
+    $("pfAlamat").value = state.user.alamat_sekolah || "";
+    $("pfKota").value = state.user.kota_sekolah || "";
+    $("pfKepala").value = state.user.nama_kepala || "";
+    $("pfNipKepala").value = state.user.nip_kepala || "";
+    $("pfJabatan").value = state.user.jabatan_guru || "Guru";
+    $("pfNipGuru").value = state.user.nip_guru || "";
+    $("pfSignatureMode").value = state.user.signature_mode || "guru-kepala";
     $("pfQuota").value = state.user.quota_used + " / " + state.user.quota_limit +
       (state.user.is_pro ? " (Pro)" : "");
+  }
+
+  var SIGNATURE_TYPES = ["modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
+                          "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"];
+  function signatureParams() {
+    if (!state.user) return {};
+    return {
+      npsn: state.user.npsn || "",
+      sekolah: state.user.sekolah || "",
+      alamat_sekolah: state.user.alamat_sekolah || "",
+      kota_sekolah: state.user.kota_sekolah || "",
+      nama_kepala: state.user.nama_kepala || "",
+      nip_kepala: state.user.nip_kepala || "",
+      jabatan_guru: state.user.jabatan_guru || "Guru",
+      nip_guru: state.user.nip_guru || "",
+      signature_mode: state.user.signature_mode || "guru-kepala"
+    };
   }
 
   /* ============================================================
@@ -598,6 +623,9 @@
   }
 
   function runGenerate(type, params, sec, msgEl, save) {
+    if (SIGNATURE_TYPES.indexOf(type) >= 0) {
+      params = Object.assign({}, params, signatureParams());
+    }
     if (msgEl) msg(msgEl, "AI sedang menulis…", "");
     var box = $("res-" + sec);
     box.innerHTML = '<div class="result-panel"><p class="muted"><span class="spin">' + icon("loader", 16) + "</span> AI sedang menulis " +
@@ -777,6 +805,7 @@
         var t = PAKET_TYPES[i];
         var row = $("pkg-" + i);
         var p = Object.assign({}, params);
+        if (SIGNATURE_TYPES.indexOf(t) >= 0) p = Object.assign(p, signatureParams());
         // kunci & pembahasan memakai soal yang baru dibuat agar konsisten
         if ((t === "kunci-jawaban" || t === "pembahasan") && lastSoal) p.soal = lastSoal;
         api("POST", "/api/generate", { type: t, params: p, save: true, model: currentModelOverride() }).then(function (res) {
@@ -867,7 +896,11 @@
       e.preventDefault();
       api("PUT", "/api/me", {
         nama: $("pfNama").value, sekolah: $("pfSekolah").value,
-        mapel: $("pfMapel").value, jenjang: $("pfJenjang").value
+        mapel: $("pfMapel").value, jenjang: $("pfJenjang").value,
+        npsn: $("pfNpsn").value, alamat_sekolah: $("pfAlamat").value,
+        kota_sekolah: $("pfKota").value, nama_kepala: $("pfKepala").value,
+        nip_kepala: $("pfNipKepala").value, jabatan_guru: $("pfJabatan").value,
+        nip_guru: $("pfNipGuru").value, signature_mode: $("pfSignatureMode").value
       }).then(function (res) {
         if (res.status === 200) {
           state.user = res.data.user; fillProfile();
