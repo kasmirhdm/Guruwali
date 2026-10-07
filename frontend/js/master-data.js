@@ -261,8 +261,8 @@ var GWMaster = {
 
   coverage: function (mapel, jenjang, kelas, semester) {
     var alias = {
-      "PPKn": jenjang === "SMA" || jenjang === "SMK" ? "PPKn-SMA" : "PPKn",
-      "Informatika": (jenjang === "SMA" || jenjang === "SMK") ? "Informatika-SMA" : "Informatika",
+      "PPKn": jenjang === "SMK" ? "PPKn-SMK" : (jenjang === "SMA" ? "PPKn-SMA" : "PPKn"),
+      "Informatika": jenjang === "SMK" ? "Informatika-SMK" : (jenjang === "SMA" ? "Informatika-SMA" : "Informatika"),
       "Bahasa Inggris": jenjang === "SD" ? "Bahasa Inggris-SD" : (jenjang === "SMK" ? "Bahasa Inggris-SMK" : "Bahasa Inggris"),
       "Matematika": jenjang === "SMK" ? "Matematika-SMK" : "Matematika",
       "Bahasa Indonesia": jenjang === "SMK" ? "Bahasa Indonesia-SMK" : "Bahasa Indonesia",
