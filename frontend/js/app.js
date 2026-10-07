@@ -113,6 +113,7 @@
     });
     $("appNav").classList.remove("open");
     if (name === "riwayat") loadDocs();
+    if (name === "dokumen") { loadDocumentWorkspace(); }
     if (name === "beranda") { loadRecent(); refreshQuotaUI(); }
   }
 
@@ -136,6 +137,8 @@
     $("tabDaftar").classList.toggle("active", !login);
     $("loginForm").classList.toggle("hidden", !login);
     $("registerForm").classList.toggle("hidden", login);
+    var headline = $("authHeadline");
+    if (headline) headline.textContent = login ? "Selamat datang kembali." : "Mulai bekerja lebih cerdas.";
   }
 
   function refreshAuthUI() {
@@ -248,6 +251,44 @@
     if ($("pkQuota")) $("pkQuota").value = txt;
   }
 
+
+  /* ================= penilaian ================= */
+  var gradeState = { rows: [], lastAnalysis: null };
+  function gradeStorageKey(){var email=state.user&&state.user.email?state.user.email:"guest";return"gw_grades_v1_"+email.toLowerCase();}
+  function loadGradeState(){try{var raw=localStorage.getItem(gradeStorageKey());gradeState.rows=raw?JSON.parse(raw):[];if(!Array.isArray(gradeState.rows))gradeState.rows=[];}catch(e){gradeState.rows=[];}renderGradeRows();}
+  function saveGradeState(){try{localStorage.setItem(gradeStorageKey(),JSON.stringify(gradeState.rows));}catch(e){}}
+  function addGradeRow(name,score){gradeState.rows.push({name:name||"",score:score==null?"":score});saveGradeState();renderGradeRows();}
+  function renderGradeRows(){var box=$("gradeRows");if(!box)return;if(!gradeState.rows.length)gradeState.rows.push({name:"",score:""});var threshold=Number($("gradeThreshold")&&$("gradeThreshold").value)||75;
+    box.innerHTML=gradeState.rows.map(function(r,i){var n=Number(r.score),status=r.score!==""&&isFinite(n)?(n>=threshold?"Tuntas":"Belum tuntas"):"—",cls=status==="Tuntas"?"grade-ok":(status==="Belum tuntas"?"grade-no":"");
+      return'<tr><td>'+(i+1)+'</td><td><input class="grade-name" data-i="'+i+'" value="'+esc(r.name)+'" placeholder="Nama siswa"></td><td><input class="grade-score" data-i="'+i+'" type="number" min="0" max="100" step="0.01" value="'+esc(r.score)+'" placeholder="0–100"></td><td><span class="grade-status '+cls+'">'+status+'</span></td><td><button type="button" class="icon-btn remove-grade" data-i="'+i+'" title="Hapus">×</button></td></tr>';}).join("");
+    box.querySelectorAll(".grade-name").forEach(function(el){el.addEventListener("input",function(){gradeState.rows[Number(el.dataset.i)].name=el.value;saveGradeState();});});
+    box.querySelectorAll(".grade-score").forEach(function(el){el.addEventListener("input",function(){var v=el.value;var idx=Number(el.dataset.i);gradeState.rows[idx].score=v===""?"":Math.max(0,Math.min(100,Number(v)));saveGradeState();var n=Number(gradeState.rows[idx].score),status=v!==""&&isFinite(n)?(n>=threshold?"Tuntas":"Belum tuntas"):"—";el.closest("tr").querySelector(".grade-status").textContent=status;el.closest("tr").querySelector(".grade-status").className="grade-status "+(status==="Tuntas"?"grade-ok":(status==="Belum tuntas"?"grade-no":""));});});
+    box.querySelectorAll(".remove-grade").forEach(function(el){el.addEventListener("click",function(){gradeState.rows.splice(Number(el.dataset.i),1);saveGradeState();renderGradeRows();});});
+  }
+  function getGradeData(){return gradeState.rows.map(function(r){return{name:String(r.name||"").trim(),score:Number(r.score)};}).filter(function(r){return r.name&&isFinite(r.score)&&r.score>=0&&r.score<=100;});}
+  function analyzeGrades(showMessage){var data=getGradeData(),threshold=Number($("gradeThreshold").value);if(!isFinite(threshold)||threshold<0||threshold>100)threshold=75;if(!data.length){if(showMessage)msg($("gradeMsg"),"Isi minimal satu nama dan nilai yang valid.","error");return null;}
+    var scores=data.map(function(r){return r.score;}),avg=scores.reduce(function(a,b){return a+b;},0)/scores.length,max=Math.max.apply(Math,scores),min=Math.min.apply(Math,scores),mastered=data.filter(function(r){return r.score>=threshold;}).length,dist={"90–100":0,"80–89":0,"70–79":0,"60–69":0,"<60":0};
+    data.forEach(function(r){if(r.score>=90)dist["90–100"]++;else if(r.score>=80)dist["80–89"]++;else if(r.score>=70)dist["70–79"]++;else if(r.score>=60)dist["60–69"]++;else dist["<60"]++;});
+    gradeState.lastAnalysis={data:data,threshold:threshold,avg:avg,max:max,min:min,mastered:mastered,dist:dist};$("statCount").textContent=data.length;$("statAvg").textContent=avg.toFixed(2);$("statMax").textContent=max.toFixed(2);$("statMin").textContent=min.toFixed(2);$("statMastery").textContent=mastered+" ("+((mastered/data.length)*100).toFixed(1)+"%)";$("statNotMastered").textContent=(data.length-mastered)+" ("+(((data.length-mastered)/data.length)*100).toFixed(1)+"%)";
+    $("gradeDistribution").innerHTML='<h4>Distribusi Nilai</h4><div class="distribution-list">'+Object.keys(dist).map(function(k){var pct=dist[k]/data.length*100;return'<div class="dist-row"><span>'+k+'</span><div class="dist-bar"><i style="width:'+pct.toFixed(1)+'%"></i></div><strong>'+dist[k]+'</strong></div>';}).join("")+'</div><p class="muted small">KKTP: <strong>'+threshold+'</strong>. Ketuntasan dihitung dari nilai yang memenuhi atau melampaui KKTP.</p>';if(showMessage)msg($("gradeMsg"),"Analisis selesai untuk "+data.length+" peserta didik.","ok");return gradeState.lastAnalysis;}
+  function gradeReportText(a){var title=($("gradeTitle").value||"Analisis Penilaian").trim(),lines=[title,"","KKTP: "+a.threshold,"Jumlah peserta didik: "+a.data.length,"Rata-rata: "+a.avg.toFixed(2),"Nilai tertinggi: "+a.max.toFixed(2),"Nilai terendah: "+a.min.toFixed(2),"Tuntas: "+a.mastered+" ("+(a.mastered/a.data.length*100).toFixed(1)+"%)","Belum tuntas: "+(a.data.length-a.mastered)+" ("+((a.data.length-a.mastered)/a.data.length*100).toFixed(1)+"%)","","Daftar nilai:","No | Nama | Nilai | Status"];a.data.forEach(function(r,i){lines.push((i+1)+" | "+r.name+" | "+r.score+" | "+(r.score>=a.threshold?"Tuntas":"Belum tuntas"));});lines.push("","Distribusi:");Object.keys(a.dist).forEach(function(k){lines.push(k+": "+a.dist[k]);});return lines.join("\n");}
+  function initAssessment(){if(!$("gradeRows")||$("gradeRows").getAttribute("data-init"))return;$("gradeRows").setAttribute("data-init","1");loadGradeState();$("addGradeRow").addEventListener("click",function(){addGradeRow();});$("analyzeGrades").addEventListener("click",function(){analyzeGrades(true);});$("gradeThreshold").addEventListener("input",renderGradeRows);
+    $("clearGrades").addEventListener("click",function(){if(!confirm("Bersihkan seluruh nilai yang tersimpan di perangkat ini?"))return;gradeState.rows=[];gradeState.lastAnalysis=null;saveGradeState();renderGradeRows();["statCount","statAvg","statMax","statMin","statMastery","statNotMastered"].forEach(function(id){$(id).textContent=id==="statCount"?"0":"—";});$("gradeDistribution").innerHTML='<p class="muted">Masukkan nilai lalu pilih <strong>Analisis Nilai</strong>.</p>';msg($("gradeMsg"),"Data penilaian dibersihkan.","ok");});
+    $("saveGradeReport").addEventListener("click",function(){var a=gradeState.lastAnalysis||analyzeGrades(false);if(!a){msg($("gradeMsg"),"Analisis nilai terlebih dahulu.","error");return;}api("POST","/api/documents",{type:"analisis-penilaian",title:($("gradeTitle").value||"Analisis Penilaian").trim(),content:gradeReportText(a)}).then(function(res){msg($("gradeMsg"),res.status===200?"Analisis tersimpan di Riwayat.":(res.data.error||"Gagal menyimpan."),res.status===200?"ok":"error");if(res.status===200)loadRecent();});});
+    $("exportGradesCsv").addEventListener("click",function(){var a=gradeState.lastAnalysis||analyzeGrades(false);if(!a){msg($("gradeMsg"),"Analisis nilai terlebih dahulu.","error");return;}var csv="No,Nama,Nilai,Status\n"+a.data.map(function(r,i){return(i+1)+',"'+r.name.replace(/"/g,'""')+'",'+r.score+',"'+(r.score>=a.threshold?"Tuntas":"Belum tuntas")+'"';}).join("\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),ael=document.createElement("a");ael.href=url;ael.download=(($("gradeTitle").value||"penilaian").trim().replace(/[^\w\-]+/g,"-")||"penilaian")+".csv";document.body.appendChild(ael);ael.click();ael.remove();URL.revokeObjectURL(url);});
+  }
+
+  /* ================= dokumen & file ================= */
+  var documentState={docs:[],selected:""};
+  function loadDocumentWorkspace(){if(!$("workspaceDocs"))return;api("GET","/api/documents").then(function(res){if(res.status!==200)return;documentState.docs=res.data.documents||[];populateDocumentSelect();renderWorkspaceDocs();});}
+  function populateDocumentSelect(){var sel=$("documentSelect");if(!sel)return;var current=documentState.selected;sel.innerHTML='<option value="">— Pilih dokumen —</option>'+documentState.docs.map(function(d){return'<option value="'+d.id+'"'+(String(d.id)===String(current)?" selected":"")+'>'+esc(d.title)+'</option>';}).join("");}
+  function renderWorkspaceDocs(){var box=$("workspaceDocs");if(!box)return;var q=(($("documentSearch")&&$("documentSearch").value)||"").trim().toLowerCase(),docs=documentState.docs.filter(function(d){return!q||(d.title||"").toLowerCase().indexOf(q)>=0||(d.type||"").toLowerCase().indexOf(q)>=0;});if(!docs.length){box.innerHTML='<p class="muted">Belum ada dokumen yang cocok.</p>';return;}box.innerHTML=docs.map(function(d){return'<div class="doc-item workspace-doc-item" data-id="'+d.id+'"><div><div class="doc-type">'+esc(d.type)+'</div><div class="doc-title">'+esc(d.title)+'</div><div class="doc-date">'+new Date(d.updated_at*1000).toLocaleString("id-ID")+'</div></div><div class="doc-actions"><button class="icon-btn open-doc" type="button">Buka</button><button class="icon-btn doc-word" type="button">Word</button><button class="icon-btn doc-pdf" type="button">PDF</button></div></div>';}).join("");box.querySelectorAll(".workspace-doc-item").forEach(function(el){var id=el.getAttribute("data-id");el.querySelector(".open-doc").addEventListener("click",function(){var d=documentState.docs.find(function(x){return String(x.id)===String(id);});if(!d)return;documentState.selected=id;populateDocumentSelect();$("documentAnswer").innerHTML='<details open><summary>Isi dokumen</summary><pre class="document-preview">'+esc(d.content||"")+'</pre></details>';});el.querySelector(".doc-word").addEventListener("click",function(){dlExport(id,"docx");});el.querySelector(".doc-pdf").addEventListener("click",function(){dlExport(id,"pdf");});});}
+  function initDocumentWorkspace(){if(!$("documentFile")||$("documentFile").getAttribute("data-init"))return;$("documentFile").setAttribute("data-init","1");$("documentFile").addEventListener("change",function(){var file=$("documentFile").files[0];if(file&&!$("documentTitle").value)$("documentTitle").value=file.name.replace(/\.[^.]+$/,"");});
+    $("importDocumentBtn").addEventListener("click",function(){var file=$("documentFile").files[0];if(!file){msg($("documentMsg"),"Pilih file .txt, .md, atau .csv terlebih dahulu.","error");return;}if(file.size>1000000){msg($("documentMsg"),"File terlalu besar. Maksimal 1 MB.","error");return;}var reader=new FileReader();reader.onload=function(){var title=($("documentTitle").value||file.name).trim();api("POST","/api/documents",{type:"dokumen-import",title:title,content:String(reader.result||"")}).then(function(res){if(res.status===200){msg($("documentMsg"),"Dokumen berhasil disimpan.","ok");$("documentFile").value="";$("documentTitle").value="";loadDocumentWorkspace();loadRecent();}else msg($("documentMsg"),res.data.error||"Gagal menyimpan dokumen.","error");});};reader.onerror=function(){msg($("documentMsg"),"File tidak dapat dibaca.","error");};reader.readAsText(file);});
+    $("documentSearch").addEventListener("input",renderWorkspaceDocs);$("refreshDocuments").addEventListener("click",loadDocumentWorkspace);$("documentSelect").addEventListener("change",function(){documentState.selected=$("documentSelect").value;});
+    $("askDocumentBtn").addEventListener("click",function(){var id=$("documentSelect").value,question=$("documentQuestion").value.trim(),d=documentState.docs.find(function(x){return String(x.id)===String(id);});if(!d){$("documentAnswer").innerHTML='<p class="form-msg error">Pilih dokumen terlebih dahulu.</p>';return;}if(!question){$("documentAnswer").innerHTML='<p class="form-msg error">Tulis pertanyaannya terlebih dahulu.</p>';return;}var context=(d.content||"").slice(0,12000);$("documentAnswer").innerHTML='<p class="muted"><span class="spin">'+icon("loader",16)+'</span> Menganalisis dokumen…</p>';api("POST","/api/generate",{type:"chat-bebas",params:{pesan:"KONTEKS DOKUMEN:\n"+context+"\n\nPERTANYAAN GURU:\n"+question},save:false,model:currentModelOverride()}).then(function(res){if(res.status===200){$("documentAnswer").innerHTML='<div class="answer-card"><strong>Jawaban AI</strong><pre>'+esc(res.data.content||"")+'</pre></div>';if(res.data.quota){state.quota=res.data.quota;state.user.quota_used=res.data.quota.used;refreshQuotaUI();fillProfile();}}else $("documentAnswer").innerHTML='<p class="form-msg error">'+esc(res.data.error||"Gagal memproses dokumen.")+'</p>';});});
+  }
+
   /* ================= profil ================= */
   function fillProfile() {
     if (!state.user) return;
@@ -255,8 +296,45 @@
     $("pfSekolah").value = state.user.sekolah || "";
     $("pfMapel").value = state.user.mapel || "";
     $("pfJenjang").value = state.user.jenjang || "";
+    $("pfNpsn").value = state.user.npsn || "";
+    $("pfAlamat").value = state.user.alamat_sekolah || "";
+    $("pfKota").value = state.user.kota_sekolah || "";
+    $("pfKepala").value = state.user.nama_kepala || "";
+    $("pfNipKepala").value = state.user.nip_kepala || "";
+    $("pfJabatan").value = state.user.jabatan_guru || "Guru";
+    $("pfNipGuru").value = state.user.nip_guru || "";
+    $("pfSignatureMode").value = state.user.signature_mode || "guru-kepala";
+    $("pfKopMode").value = state.user.kop_mode || "admin";
+    $("pfKopJudul").value = state.user.kop_judul || "";
+    $("pfKopSubjudul").value = state.user.kop_subjudul || "";
+    $("pfKopTelp").value = state.user.kop_telp || "";
+    $("pfKopEmail").value = state.user.kop_email || "";
+    $("pfKopWebsite").value = state.user.kop_website || "";
     $("pfQuota").value = state.user.quota_used + " / " + state.user.quota_limit +
       (state.user.is_pro ? " (Pro)" : "");
+  }
+
+  var SIGNATURE_TYPES = ["modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
+                          "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"];
+  function signatureParams() {
+    if (!state.user) return {};
+    return {
+      npsn: state.user.npsn || "",
+      sekolah: state.user.sekolah || "",
+      alamat_sekolah: state.user.alamat_sekolah || "",
+      kota_sekolah: state.user.kota_sekolah || "",
+      nama_kepala: state.user.nama_kepala || "",
+      nip_kepala: state.user.nip_kepala || "",
+      jabatan_guru: state.user.jabatan_guru || "Guru",
+      nip_guru: state.user.nip_guru || "",
+      signature_mode: state.user.signature_mode || "guru-kepala",
+      kop_mode: state.user.kop_mode || "admin",
+      kop_judul: state.user.kop_judul || "",
+      kop_subjudul: state.user.kop_subjudul || "",
+      kop_telp: state.user.kop_telp || "",
+      kop_email: state.user.kop_email || "",
+      kop_website: state.user.kop_website || ""
+    };
   }
 
   /* ============================================================
@@ -557,6 +635,9 @@
   }
 
   function runGenerate(type, params, sec, msgEl, save) {
+    if (SIGNATURE_TYPES.indexOf(type) >= 0) {
+      params = Object.assign({}, params, signatureParams());
+    }
     if (msgEl) msg(msgEl, "AI sedang menulis…", "");
     var box = $("res-" + sec);
     box.innerHTML = '<div class="result-panel"><p class="muted"><span class="spin">' + icon("loader", 16) + "</span> AI sedang menulis " +
@@ -664,8 +745,12 @@
       chatHistory.push({ role: "user", content: pesan });
       chatMsg("ai", "Mengetik…", false, true);
       var typing = $("chatBox").lastChild;
+      var context = chatHistory.slice(-12).map(function (m) {
+        return (m.role === "user" ? "GURU" : "GURUWALI AI") + ": " + m.content;
+      }).join("\n");
+      var chatPrompt = context ? "RIWAYAT PERCAKAPAN SEBELUMNYA:\n" + context + "\n\nPESAN TERBARU GURU:\n" + pesan : pesan;
       api("POST", "/api/generate", {
-        type: "chat-bebas", params: { pesan: pesan }, save: false, model: currentModelOverride()
+        type: "chat-bebas", params: { pesan: chatPrompt }, save: false, model: currentModelOverride()
       }).then(function (res) {
         typing.remove();
         if (res.status === 200) {
@@ -732,6 +817,7 @@
         var t = PAKET_TYPES[i];
         var row = $("pkg-" + i);
         var p = Object.assign({}, params);
+        if (SIGNATURE_TYPES.indexOf(t) >= 0) p = Object.assign(p, signatureParams());
         // kunci & pembahasan memakai soal yang baru dibuat agar konsisten
         if ((t === "kunci-jawaban" || t === "pembahasan") && lastSoal) p.soal = lastSoal;
         api("POST", "/api/generate", { type: t, params: p, save: true, model: currentModelOverride() }).then(function (res) {
@@ -756,6 +842,14 @@
           }
           refreshQuotaUI();
           setTimeout(function () { step(i + 1); }, 1500);
+        }).catch(function () {
+          failed++;
+          row.classList.add("fail");
+          var sp3 = row.querySelector("span");
+          if (sp3) { sp3.classList.remove("spin"); sp3.innerHTML = icon("xCircle", 18); }
+          row.title = "Koneksi gagal saat membuat dokumen.";
+          refreshQuotaUI();
+          setTimeout(function () { step(i + 1); }, 1500);
         });
       }
       step(0);
@@ -777,6 +871,10 @@
     // auth tabs
     $("tabMasuk").addEventListener("click", function () { setAuthTab("login"); });
     $("tabDaftar").addEventListener("click", function () { setAuthTab("register"); });
+    var switchRegister = $("switchRegister");
+    var switchLogin = $("switchLogin");
+    if (switchRegister) switchRegister.addEventListener("click", function () { setAuthTab("register"); });
+    if (switchLogin) switchLogin.addEventListener("click", function () { setAuthTab("login"); });
 
     $("loginForm").addEventListener("submit", function (e) {
       e.preventDefault();
@@ -810,7 +908,14 @@
       e.preventDefault();
       api("PUT", "/api/me", {
         nama: $("pfNama").value, sekolah: $("pfSekolah").value,
-        mapel: $("pfMapel").value, jenjang: $("pfJenjang").value
+        mapel: $("pfMapel").value, jenjang: $("pfJenjang").value,
+        npsn: $("pfNpsn").value, alamat_sekolah: $("pfAlamat").value,
+        kota_sekolah: $("pfKota").value, nama_kepala: $("pfKepala").value,
+        nip_kepala: $("pfNipKepala").value, jabatan_guru: $("pfJabatan").value,
+        nip_guru: $("pfNipGuru").value, signature_mode: $("pfSignatureMode").value,
+        kop_mode: $("pfKopMode").value, kop_judul: $("pfKopJudul").value,
+        kop_subjudul: $("pfKopSubjudul").value, kop_telp: $("pfKopTelp").value,
+        kop_email: $("pfKopEmail").value, kop_website: $("pfKopWebsite").value
       }).then(function (res) {
         if (res.status === 200) {
           state.user = res.data.user; fillProfile();
@@ -834,6 +939,8 @@
 
     initChat();
     initPackage();
+    initAssessment();
+    initDocumentWorkspace();
     loadMe();
   });
 })();

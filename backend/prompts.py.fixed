@@ -41,7 +41,7 @@ SYSTEM_ID = (
     "10. Sebelum mengirim hasil, lakukan pemeriksaan akhir: kelengkapan, konsistensi, kesesuaian "
     "waktu, kesesuaian level, kebenaran jawaban, dan keterhubungan antarbagian.\n"
     "11. Untuk soal matematika/IPA/akuntansi atau tugas yang memiliki perhitungan, hitung ulang setiap langkah secara mandiri. Untuk PG, pastikan tepat satu opsi yang benar, kunci cocok dengan hasil hitung, dan pembahasan menghasilkan hasil yang sama. Jika tidak ada opsi yang benar atau ada lebih dari satu opsi benar, wajib memperbaiki soal/opsinya sebelum mengirim. Jangan mempertahankan soal yang cacat hanya demi memenuhi jumlah.\n"
-    "12. Untuk aljabar, persamaan, dan ekspresi numerik, lakukan verifikasi substitusi dengan setidaknya satu nilai yang valid bila relevan. Jangan menulis catatan seperti 'koreksi', 'opsi salah', 'kemungkinan ralat', atau menyatakan kunci yang bertentangan dengan perhitungan akhir; perbaiki kontennya terlebih dahulu.\n"    "13. Notasi matematika harus aman untuk Word/PDF dan mudah dibaca: jangan gunakan LaTeX seperti $...$, \\times, \\frac, \\sqrt atau perintah backslash. Gunakan karakter Unicode langsung seperti × ÷ ± − √ ² ³ ° bila tersedia; pecahan sederhana ditulis dengan format 3/4.\n"
+    "12. Untuk aljabar, persamaan, dan ekspresi numerik, lakukan verifikasi substitusi dengan setidaknya satu nilai yang valid bila relevan. Jangan menulis catatan seperti 'koreksi', 'opsi salah', 'kemungkinan ralat', atau menyatakan kunci yang bertentangan dengan perhitungan akhir; perbaiki kontennya terlebih dahulu.\n"\n    "13. Notasi matematika harus aman untuk Word/PDF dan mudah dibaca: jangan gunakan LaTeX seperti $...$, \\times, \\frac, \\sqrt atau perintah backslash. Gunakan karakter Unicode langsung seperti × ÷ ± − √ ² ³ ° bila tersedia; pecahan sederhana ditulis dengan format 3/4.\n"
     "Format keluaran memakai heading yang jelas (##, ###), tabel bila membantu, dan daftar berpoin. "
     "Jangan memakai emoji berlebihan."
 )
@@ -478,7 +478,7 @@ def build_prompt(gen_type, inputs):
             "Gunakan data kop yang diberikan apa adanya: [JUDUL KOP], [SUBJUDUL KOP], nama sekolah, "
             "alamat, NPSN, telepon, email, dan informasi kontak lain. Jangan mengarang data yang kosong; "
             "gunakan placeholder [JUDUL KOP], [SUBJUDUL KOP], [ALAMAT SEKOLAH], [NPSN], [TELEPON], [EMAIL]. "
-            "Setelah kop, buat garis pemisah yang jelas. JANGAN tulis judul ganda. Mulai dokumen LANGSUNG dengan blok KOP. Untuk kop_mode 'admin', jangan menambahkan kop "
+            "Setelah kop, buat garis pemisah yang jelas. Untuk kop_mode 'admin', jangan menambahkan kop "
             "ke dokumen non-administrasi; untuk 'semua', ikuti aturan ini pada dokumen formal."
         )
     if gen_type in signature_types:

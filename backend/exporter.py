@@ -58,6 +58,38 @@ def _rich_parts(text):
 
 # ---------------- DOCX ----------------
 
+def _extract_ttd(content):
+    """Ekstrak blok [[TTD]]...[[/TTD]] jadi (kiri_lines, kanan_lines, sisa_content)."""
+    m = re.search(r"\[\[TTD\]\](.*?)\[\[/TTD\]\]", content or "", re.DOTALL)
+    if not m:
+        return None, content
+    inner = m.group(1).strip()
+    lines = [l.strip() for l in inner.splitlines() if l.strip()]
+    # Format: baris dengan | sebagai pemisah kolom
+    kiri, kanan = [], []
+    for l in lines:
+        if "|" in l:
+            k, kn = l.split("|", 1)
+            kiri.append(k.strip())
+            kanan.append(kn.strip())
+        else:
+            kiri.append(l)
+    sisa = content[:m.start()] + content[m.end():]
+    return (kiri, kanan), sisa
+
+
+def _extract_kop(content):
+    """Ekstrak blok [[KOP]]...[[/KOP]] jadi (kop_lines, sisa_content)."""
+    import re
+    m = re.search(r"\[\[KOP\]\](.*?)\[\[/KOP\]\]", content or "", re.DOTALL)
+    if not m:
+        return None, content
+    inner = m.group(1).strip()
+    lines = [l.strip() for l in inner.splitlines() if l.strip()]
+    sisa = content[:m.start()] + content[m.end():]
+    return lines, sisa
+
+
 def to_docx(title, content):
     from docx import Document
     from docx.shared import Pt, RGBColor
@@ -68,8 +100,28 @@ def to_docx(title, content):
     style.font.name = "Calibri"
     style.font.size = Pt(11)
 
-    t = doc.add_heading(title or "Dokumen GuruWali", level=0)
-    t.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Skip judul otomatis jika ada blok KOP (hindari judul ganda)
+    has_kop = "[[KOP]]" in (content or "")
+    t = None
+    if not has_kop:
+        t = doc.add_heading(title or "Dokumen GuruWali", level=0)
+    if t: t.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    ttd_data, content = _extract_ttd(content)
+    kop_data, content = _extract_kop(content)
+
+    # Render kop rata tengah di paling atas (sebelum judul)
+    if kop_data:
+        for kl in kop_data:
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            r = p.add_run(kl)
+            r.bold = True
+        # Garis pemisah
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run("=" * 50)
+        run.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
 
     for kind, text in _parse_blocks(content):
         if kind == "h1":
@@ -95,6 +147,43 @@ def to_docx(title, content):
             for seg, bold in _rich_parts(text):
                 r = p.add_run(seg)
                 r.bold = bold
+
+    # Tabel tanda tangan di akhir dokumen
+    if ttd_data:
+        kiri, kanan = ttd_data
+        # Baris tanggal
+        if kiri and "," in kiri[0]:
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            r = p.add_run(kiri.pop(0))
+        table = doc.add_table(rows=1, cols=2)
+        table.autofit = True
+        # Hapus border
+        for row in table.rows:
+            for cell in row.cells:
+                cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # Isi sel
+        max_rows = max(len(kiri), len(kanan))
+        # Baris pertama sudah ada, tambah sisanya
+        for _ in range(max_rows - 1):
+            table.add_row()
+        for i in range(max_rows):
+            if i < len(kiri):
+                table.rows[i].cells[0].text = kiri[i]
+                table.rows[i].cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            if i < len(kanan):
+                table.rows[i].cells[1].text = kanan[i]
+                table.rows[i].cells[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # Hilangkan border tabel
+        from docx.oxml.ns import qn
+        for row in table.rows:
+            for cell in row.cells:
+                tc = cell._tc
+                tcPr = tc.get_or_add_tcPr()
+                tcBorders = tcPr.first_child_found_in("w:tcBorders")
+                if tcBorders is None:
+                    tcBorders = tcPr.makeelement(qn('w:tcBorders'), {})
+                    tcPr.append(tcBorders)
 
     buf = io.BytesIO()
     doc.save(buf)
@@ -139,6 +228,7 @@ def to_pdf(title, content):
         text = re.sub(r"\*(.+?)\*", r"<i>\1</i>", text)
         return text
 
+    ttd_data, content = _extract_ttd(content)
     story = [Paragraph(md2html(title or "Dokumen GuruWali"), s_title),
              Spacer(1, 6)]
     for kind, text in _parse_blocks(content):
@@ -155,5 +245,21 @@ def to_pdf(title, content):
             story.append(Paragraph(md2html(text), s_number))
         else:
             story.append(Paragraph(md2html(text), s_body))
+    # Tabel tanda tangan
+    if ttd_data:
+        from reportlab.platypus import Table, TableStyle
+        kiri, kanan = ttd_data
+        # Baris tanggal rata kanan
+        if kiri and "," in kiri[0]:
+            story.append(Paragraph(md2html(kiri.pop(0)), s_body))
+        max_rows = max(len(kiri), len(kanan), 1)
+        data = []
+        for i in range(max_rows):
+            k = kiri[i] if i < len(kiri) else ""
+            kn = kanan[i] if i < len(kanan) else ""
+            data.append([Paragraph(md2html(k), s_body), Paragraph(md2html(kn), s_body)])
+        t = Table(data, colWidths=[260, 260])
+        t.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('VALIGN', (0,0), (-1,-1), 'TOP')]))
+        story.append(t)
     doc.build(story)
     return buf.getvalue()

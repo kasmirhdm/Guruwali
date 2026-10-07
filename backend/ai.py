@@ -5,7 +5,7 @@ Env:
   GURUWALI_AI_KEY    API key Invibuilder (gateway multi-model) — prioritas utama
   GURUWALI_GEMINI_KEY API key Gemini (fallback bila AI_KEY kosong)
   GURUWALI_AI_BASE   base URL kustom (default: Invibuilder bila AI_KEY ada, else Gemini)
-  GURUWALI_MODEL     model default (default: gemini-flash-lite-latest)
+  GURUWALI_MODEL     model default Gemini (default: gemini-flash-lite-latest)
 """
 import json
 import os
@@ -72,7 +72,7 @@ MODEL_IDS = {m["id"] for m in MODELS} | {m["id"] for m in IMAGE_MODELS}
 # Tiap kategori tugas memakai model yang paling cocok (saling melengkapi):
 # ringan  -> cepat & murah | standar -> seimbang | berat -> penalaran kuat.
 _MODEL_LIGHT = "openai/gpt-4o-mini"
-_MODEL_STANDARD = "openai/gpt-4o-mini"
+_MODEL_STANDARD = "deepseek/deepseek-v4-flash"
 _MODEL_HEAVY = "ar1/claude-sonnet-4-6"
 _IMAGE_MODEL = "mg-image-0.1"
 
@@ -129,7 +129,7 @@ def available_models():
     if provider() == "invibuilder":
         return MODELS
     dm = default_model()
-    return [{"id": dm, "label": "Gemini Flash Lite", "desc": "Model default Gemini"}]
+    return [{"id": dm, "label": "Gemini (default)", "desc": "Model Gemini yang dikonfigurasi server"}]
 
 
 def routing_info():
@@ -152,10 +152,18 @@ def resolve_model(gen_type, override=None):
     Di provider Gemini (satu model), selalu pakai default_model().
     Override di luar katalog tetap diterima bila polanya aman (untuk model baru di gateway).
     """
+    # Gemini adalah provider production default: semua generator memakai model Gemini
+    # yang dikonfigurasi server, kecuali gateway Invibuilder memang sengaja diaktifkan.
     if provider() != "invibuilder":
         return default_model()
     if override:
         override = str(override).strip()[:100]
+        # Empty/auto berarti gunakan smart routing berdasarkan tipe generator.
+        if override in ("", "auto"):
+            return model_for_type(gen_type)
+        # Mode hemat memakai model ringan yang konsisten dan murah.
+        if override == "auto:hemat":
+            return _MODEL_LIGHT
         if override in MODEL_IDS or _SAFE_MODEL.match(override):
             return override
     return model_for_type(gen_type)

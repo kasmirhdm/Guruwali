@@ -22,26 +22,32 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ai
 import auth
 import db
+import school
+import dapodik
 import exporter
 import prompts
 
 HOST = os.environ.get("GURUWALI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("GURUWALI_PORT", "8081"))
+SECURE_COOKIE = os.environ.get("GURUWALI_SECURE_COOKIE", "").lower() in ("1", "true", "yes", "on")
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
 
 # Rate limit: 10 request/menit/IP untuk /api/*
 RATE_WINDOW = 60
-RATE_MAX = 10
+RATE_MAX = 60
+AI_RATE_MAX = 20
+AUTH_RATE_MAX = 10
 _rate = {}
 
 
-def rate_ok(ip):
+def rate_ok(ip, bucket="general", limit=RATE_MAX):
     t = time.time()
-    hits = [x for x in _rate.get(ip, []) if t - x < RATE_WINDOW]
-    if len(hits) >= RATE_MAX:
+    key = (bucket, ip)
+    hits = [x for x in _rate.get(key, []) if t - x < RATE_WINDOW]
+    if len(hits) >= limit:
         return False
     hits.append(t)
-    _rate[ip] = hits
+    _rate[key] = hits
     return True
 
 
@@ -66,13 +72,17 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         if set_cookie:
             self.send_header(
                 "Set-Cookie",
-                f"gw_session={set_cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age={14*24*3600}",
+                f"gw_session={set_cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age={14*24*3600}" + ("; Secure" if SECURE_COOKIE else ""),
             )
         if clear_cookie:
-            self.send_header("Set-Cookie", "gw_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0")
+            self.send_header("Set-Cookie", "gw_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0" + ("; Secure" if SECURE_COOKIE else ""))
         self.end_headers()
         self.wfile.write(body)
 
@@ -103,6 +113,31 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve_static(self, path):
         rel = urllib.parse.unquote(path)
+        if rel.startswith("/uploads/"):
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            name = rel[len("/uploads/"):]
+            root = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
+            full = os.path.abspath(os.path.join(root, name))
+            if not full.startswith(root + os.sep) or not os.path.isfile(full):
+                self._send_json(404, {"error": "Tidak ditemukan."})
+                return
+            try:
+                with open(full, "rb") as f:
+                    body = f.read()
+            except OSError:
+                self._send_json(404, {"error": "Tidak ditemukan."})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", MIME.get(os.path.splitext(full)[1].lower(), "application/octet-stream"))
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Cache-Control", "private, max-age=3600")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if rel == "/":
             rel = "/index.html"
         # cegah path traversal
@@ -121,6 +156,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         self.send_header("Cache-Control", "no-cache" if ext == ".html" else "public, max-age=3600")
         self.end_headers()
         self.wfile.write(body)
@@ -133,7 +172,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if path.startswith("/api/"):
-            if not rate_ok(self.client_address[0]):
+            if not rate_ok(self.client_address[0], "general", RATE_MAX):
                 self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
                 return
             self._api_get(path, urllib.parse.parse_qs(parsed.query))
@@ -145,7 +184,9 @@ class Handler(BaseHTTPRequestHandler):
         if not parsed.path.startswith("/api/"):
             self._send_json(404, {"error": "Tidak ditemukan."})
             return
-        if not rate_ok(self.client_address[0]):
+        bucket = "ai" if parsed.path in ("/api/generate", "/api/generate-image") else ("auth" if parsed.path in ("/api/login", "/api/register") else "general")
+        limit = AI_RATE_MAX if bucket == "ai" else (AUTH_RATE_MAX if bucket == "auth" else RATE_MAX)
+        if not rate_ok(self.client_address[0], bucket, limit):
             self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
             return
         self._api_post(parsed.path)
@@ -284,6 +325,19 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        if path == "/api/school":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            s = school.get_user_school(user["id"])
+            if not s:
+                self._send_json(200, {"school": None})
+                return
+            members = school.list_members(s["id"])
+            self._send_json(200, {"school": s, "members": members,
+                "is_admin": school.is_school_admin(user["id"], s["id"])})
+            return
         if path == "/api/documents":
             user = self._user()
             if not user:
@@ -351,6 +405,119 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(401, {"error": "Belum masuk."})
             return
 
+        if path == "/api/school/create":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            if school.get_user_school(user["id"]):
+                self._send_json(400, {"error": "Sudah tergabung di sekolah."})
+                return
+            body = self._read_json()
+            s = school.create_school(user["id"], body.get("nama", ""),
+                body.get("npsn", ""), body.get("alamat", ""),
+                body.get("kota", ""), body.get("telp", ""), body.get("email", ""))
+            if not s:
+                self._send_json(400, {"error": "Gagal membuat sekolah."})
+                return
+            self._send_json(200, {"school": s})
+            return
+        if path == "/api/school/invite-code":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            s = school.get_user_school(user["id"])
+            if not s or not school.is_school_admin(user["id"], s["id"]):
+                self._send_json(403, {"error": "Hanya admin sekolah."})
+                return
+            code = school.generate_invite_code(s["id"])
+            self._send_json(200, {"invite_code": code})
+            return
+        if path == "/api/school/join":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            body = self._read_json()
+            s, msg = school.join_school(user["id"], body.get("code", ""))
+            if not s:
+                self._send_json(400, {"error": msg})
+                return
+            self._send_json(200, {"school": s, "message": msg})
+            return
+        if path == "/api/school/remove-member":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            s = school.get_user_school(user["id"])
+            if not s:
+                self._send_json(400, {"error": "Belum tergabung."})
+                return
+            body = self._read_json()
+            ok, msg = school.remove_member(s["id"], user["id"], int(body.get("user_id", 0)))
+            self._send_json(200 if ok else 400, {"ok": ok, "message": msg})
+            return
+        if path == "/api/dapodik/import":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            body = self._read_json()
+            csv_text = body.get("csv", "")
+            if not csv_text or len(csv_text) > 500000:
+                self._send_json(400, {"error": "Data CSV kosong atau terlalu besar."})
+                return
+            try:
+                rows = dapodik.parse_dapodik_csv(csv_text)
+            except Exception as e:
+                self._send_json(400, {"error": f"Gagal parse CSV: {e}"})
+                return
+            if not rows:
+                self._send_json(400, {"error": "Tidak ada data di CSV."})
+                return
+            # Ambil baris pertama (atau cari yang cocok dengan user)
+            target = rows[0]
+            for r in rows:
+                if r.get('nama') and user.get('nama') and r['nama'].lower() in user['nama'].lower():
+                    target = r
+                    break
+            ok = dapodik.apply_to_profile(user["id"], target)
+            # Jika ada data sekolah, buat/update sekolah otomatis
+            school_msg = ""
+            if target.get('sekolah'):
+                s = school.get_user_school(user["id"])
+                if not s:
+                    s = school.create_school(user["id"], target['sekolah'],
+                        target.get('npsn', ''), target.get('alamat', ''),
+                        target.get('kota', ''))
+                    school_msg = " Sekolah otomatis dibuat."
+            self._send_json(200, {"ok": ok, "imported": target,
+                "message": f"Profil diperbarui dari Dapodik.{school_msg}"})
+            return
+        if path == "/api/school/leave":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            s = school.get_user_school(user["id"])
+            if not s:
+                self._send_json(400, {"error": "Belum tergabung."})
+                return
+            if school.is_school_admin(user["id"], s["id"]):
+                self._send_json(400, {"error": "Admin tidak bisa keluar. Hapus sekolah atau tunjuk admin baru."})
+                return
+            import db as _db
+            conn = _db.get_conn()
+            try:
+                conn.execute("DELETE FROM school_members WHERE school_id=? AND user_id=?", (s["id"], user["id"]))
+                conn.execute("UPDATE users SET school_id=NULL WHERE id=?", (user["id"],))
+                conn.commit()
+            finally:
+                conn.close()
+            self._send_json(200, {"ok": True})
+            return
         if path == "/api/documents":
             dtype = str(body.get("type", ""))[:50]
             title = str(body.get("title", ""))[:200]
@@ -423,7 +590,16 @@ class Handler(BaseHTTPRequestHandler):
         if not row:
             self._send_json(401, {"error": "Belum masuk."})
             return
-        if not row["is_pro"] and (row["quota_used"] or 0) >= (row["quota_limit"] or 0):
+        # Cek kuota sekolah dulu (jika anggota sekolah Pro)
+        sq = school.check_school_quota(user["id"])
+        if sq:
+            if sq["used"] >= sq["limit"]:
+                self._send_json(402, {
+                    "error": f"Kuota sekolah {sq['school_name']} habis. Hubungi admin sekolah.",
+                    "quota": {"used": sq["used"], "limit": sq["limit"], "is_pro": True, "school": True},
+                })
+                return
+        elif not row["is_pro"] and (row["quota_used"] or 0) >= (row["quota_limit"] or 0):
             self._send_json(402, {
                 "error": "Kuota generate gratis habis. Upgrade ke GuruWali Pro untuk kuota tanpa batas.",
                 "quota": {"used": row["quota_used"], "limit": row["quota_limit"], "is_pro": False},
@@ -453,9 +629,7 @@ class Handler(BaseHTTPRequestHandler):
         doc = None
         conn = db.get_conn()
         try:
-            conn.execute(
-                "UPDATE users SET quota_used = quota_used + 1 WHERE id = ?", (user["id"],)
-            )
+            school.increment_quota(user["id"])
             if save and content:
                 title = prompts.make_title(gen_type, params)
                 cur = conn.execute(
