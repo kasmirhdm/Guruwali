@@ -27,6 +27,7 @@ import prompts
 
 HOST = os.environ.get("GURUWALI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("GURUWALI_PORT", "8081"))
+SECURE_COOKIE = os.environ.get("GURUWALI_SECURE_COOKIE", "").lower() in ("1", "true", "yes", "on")
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
 
 # Rate limit: 10 request/menit/IP untuk /api/*
@@ -73,10 +74,10 @@ class Handler(BaseHTTPRequestHandler):
         if set_cookie:
             self.send_header(
                 "Set-Cookie",
-                f"gw_session={set_cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age={14*24*3600}",
+                f"gw_session={set_cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age={14*24*3600}" + ("; Secure" if SECURE_COOKIE else ""),
             )
         if clear_cookie:
-            self.send_header("Set-Cookie", "gw_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0")
+            self.send_header("Set-Cookie", "gw_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0" + ("; Secure" if SECURE_COOKIE else ""))
         self.end_headers()
         self.wfile.write(body)
 
