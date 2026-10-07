@@ -801,6 +801,14 @@
           }
           refreshQuotaUI();
           setTimeout(function () { step(i + 1); }, 1500);
+        }).catch(function () {
+          failed++;
+          row.classList.add("fail");
+          var sp3 = row.querySelector("span");
+          if (sp3) { sp3.classList.remove("spin"); sp3.innerHTML = icon("xCircle", 18); }
+          row.title = "Koneksi gagal saat membuat dokumen.";
+          refreshQuotaUI();
+          setTimeout(function () { step(i + 1); }, 1500);
         });
       }
       step(0);
