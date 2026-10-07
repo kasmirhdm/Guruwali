@@ -5,7 +5,7 @@ Env:
   GURUWALI_AI_KEY    API key Invibuilder (gateway multi-model) — prioritas utama
   GURUWALI_GEMINI_KEY API key Gemini (fallback bila AI_KEY kosong)
   GURUWALI_AI_BASE   base URL kustom (default: Invibuilder bila AI_KEY ada, else Gemini)
-  GURUWALI_MODEL     model default (default: gemini-flash-lite-latest)
+  GURUWALI_MODEL     model default Gemini (default: gemini-2.5-flash-lite)
 """
 import json
 import os
@@ -37,7 +37,7 @@ def ai_base():
 
 
 def default_model():
-    return os.environ.get("GURUWALI_MODEL", "gemini-flash-lite-latest")
+    return os.environ.get("GURUWALI_MODEL", "gemini-2.5-flash-lite")
 
 
 def is_configured():
@@ -129,7 +129,7 @@ def available_models():
     if provider() == "invibuilder":
         return MODELS
     dm = default_model()
-    return [{"id": dm, "label": "Gemini Flash Lite", "desc": "Model default Gemini"}]
+    return [{"id": dm, "label": "Gemini (default)", "desc": "Model Gemini yang dikonfigurasi server"}]
 
 
 def routing_info():
