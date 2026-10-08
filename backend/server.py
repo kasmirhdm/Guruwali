@@ -413,6 +413,54 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        if path == "/api/platform-admin/curriculum":
+            user=self._user()
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            jenjang=str(query.get("jenjang",[""])[0] or "")
+            semester=str(query.get("semester",[""])[0] or "")
+            mapel=str(query.get("mapel",[""])[0] or "")
+            conn=db.get_conn()
+            try:
+                subjects=conn.execute("SELECT * FROM curriculum_subjects WHERE (?='' OR jenjang=?) AND (?='' OR semester=?) AND (?='' OR mapel=?) ORDER BY jenjang,semester,mapel",
+                    (jenjang,jenjang,semester,semester,mapel,mapel)).fetchall()
+                result=[]
+                for s in subjects:
+                    mats=conn.execute("SELECT * FROM curriculum_materials WHERE subject_id=? ORDER BY urutan,nama",(s["id"],)).fetchall()
+                    md=[]
+                    for m in mats:
+                        cps=conn.execute("SELECT * FROM curriculum_cp WHERE material_id=? ORDER BY id",(m["id"],)).fetchall()
+                        cd=[]
+                        for cp in cps:
+                            tps=conn.execute("SELECT * FROM curriculum_tp WHERE cp_id=? ORDER BY urutan,id",(cp["id"],)).fetchall()
+                            cd.append({**dict(cp),"tp":[dict(t) for t in tps]})
+                        md.append({**dict(m),"cp":cd})
+                    result.append({**dict(s),"materi":md})
+            finally: conn.close()
+            self._send_json(200, {"data":result}); return
+
+        if path == "/api/master-curriculum":
+            user=self._user()
+            if not user:
+                self._send_json(401, {"error":"Belum masuk."}); return
+            jenjang=str(query.get("jenjang",[""])[0] or "")
+            semester=str(query.get("semester",[""])[0] or "")
+            mapel=str(query.get("mapel",[""])[0] or "")
+            materi=str(query.get("materi",[""])[0] or "")
+            conn=db.get_conn()
+            try:
+                s=conn.execute("SELECT * FROM curriculum_subjects WHERE jenjang=? AND semester=? AND mapel=? LIMIT 1",(jenjang,semester,mapel)).fetchone()
+                data=[]
+                if s:
+                    mats=conn.execute("SELECT * FROM curriculum_materials WHERE subject_id=? AND (?='' OR nama=?) ORDER BY urutan,nama",(s["id"],materi,materi)).fetchall()
+                    for m in mats:
+                        cps=conn.execute("SELECT * FROM curriculum_cp WHERE material_id=? ORDER BY id",(m["id"],)).fetchall()
+                        for cp in cps:
+                            tps=conn.execute("SELECT * FROM curriculum_tp WHERE cp_id=? ORDER BY urutan,id",(cp["id"],)).fetchall()
+                            data.append({"materi":m["nama"],"cp":dict(cp),"tp":[dict(t) for t in tps]})
+            finally: conn.close()
+            self._send_json(200, {"data":data}); return
+
         if path == "/api/platform-admin/dashboard":
             user=self._user()
             if not platform_admin.is_platform_admin(user):
@@ -778,6 +826,33 @@ class Handler(BaseHTTPRequestHandler):
             params = {}
         # batasi ukuran params agar tidak disalahgunakan
         params = {str(k)[:40]: str(v)[:(12000 if str(k) == "soal" and gen_type in ("kunci-jawaban", "pembahasan") else 4000)] for k, v in list(params.items())[:30]}
+        # Master Kurikulum: CP/TP resmi platform menjadi sumber utama jika tersedia.
+        try:
+            jenjang=str(params.get("jenjang","")).strip()
+            semester=str(params.get("semester","")).strip()
+            mapel=str(params.get("mapel","")).strip()
+            materi=str(params.get("materi","")).strip()
+            if jenjang and semester and mapel:
+                conn_m=db.get_conn()
+                try:
+                    srow=conn_m.execute("SELECT id FROM curriculum_subjects WHERE jenjang=? AND semester=? AND mapel=? LIMIT 1",(jenjang,semester,mapel)).fetchone()
+                    if srow:
+                        mrow=conn_m.execute("SELECT id,nama FROM curriculum_materials WHERE subject_id=? AND (?='' OR nama=?) ORDER BY urutan,nama LIMIT 1",(srow["id"],materi,materi)).fetchone()
+                        if mrow:
+                            cp_rows=conn_m.execute("SELECT id,kode,deskripsi FROM curriculum_cp WHERE material_id=? ORDER BY id",(mrow["id"],)).fetchall()
+                            if cp_rows:
+                                cp_lines=[]; tp_lines=[]
+                                for cp_row in cp_rows:
+                                    cp_lines.append((cp_row["kode"]+": " if cp_row["kode"] else "")+cp_row["deskripsi"])
+                                    for tp_row in conn_m.execute("SELECT kode,deskripsi FROM curriculum_tp WHERE cp_id=? ORDER BY urutan,id",(cp_row["id"],)).fetchall():
+                                        tp_lines.append((tp_row["kode"]+": " if tp_row["kode"] else "")+tp_row["deskripsi"])
+                                params["cp"]="\n".join(cp_lines)
+                                params["tp"]="\n".join(tp_lines)
+                                params["master_kurikulum"]="Gunakan CP dan TP resmi Master Kurikulum GuruWali berikut; jangan mengarang atau menggantinya."
+                finally:
+                    conn_m.close()
+        except Exception:
+            pass
         # Identitas resmi dokumen berasal dari server, bukan dari browser.
         signature_types = {"modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
                            "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"}
