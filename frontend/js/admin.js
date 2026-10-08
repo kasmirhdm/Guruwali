@@ -133,35 +133,40 @@
     });
   }
   function curriculumModal(type,parent,item){
-    var isEdit=!!item, title=isEdit?"Edit ":"Tambah ";
-    title+=type==="material"?"Materi":type==="cp"?"Capaian Pembelajaran":"Tujuan Pembelajaran";
-    var old=document.getElementById("gwCurriculumModal"); if(old)old.remove();
-    var kode=type==="material"?"":((item&&item.kode)||"");
-    var desc=isEdit?(item.deskripsi||item.nama||""):"";
-    var order=isEdit?(item.urutan||0):0;
-    var modal=document.createElement("div"); modal.id="gwCurriculumModal";
+    var isEdit=!!item;
+    var title=(isEdit?"Edit ":"Tambah ")+(type==="subject"?"Mapel Kurikulum":type==="material"?"Materi":type==="cp"?"Capaian Pembelajaran":"Tujuan Pembelajaran");
+    var old=document.getElementById("gwCurriculumModal");if(old)old.remove();
+    var modal=document.createElement("div");modal.id="gwCurriculumModal";
     modal.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
+    var subject=type==="subject";
+    var html=subject?
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
+      '<label style="font-size:13px;font-weight:700">Jenjang<select id="gwCmJenjang" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"><option>SD</option><option>SMP</option><option>SMA</option><option>SMK</option></select></label>'+
+      '<label style="font-size:13px;font-weight:700">Fase<input id="gwCmFase" maxlength="10" placeholder="D" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>'+
+      '<label style="font-size:13px;font-weight:700">Semester<select id="gwCmSemester" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"><option value="1">Semester 1</option><option value="2">Semester 2</option></select></label>'+
+      '<label style="font-size:13px;font-weight:700">Mata Pelajaran<input id="gwCmMapel" required maxlength="120" placeholder="Matematika" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label></div>':
+      (type==="material"?
+        '<label style="font-size:13px;font-weight:700">Nama materi<textarea id="gwCmDesc" required rows="4" placeholder="Contoh: Bilangan Bulat" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px;resize:vertical">'+esc(item&&item.nama||"")+'</textarea></label>':
+        '<label style="font-size:13px;font-weight:700">Kode<input id="gwCmKode" value="'+esc(item&&item.kode||"")+'" placeholder="CP 1 / TP 1.1" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>'+
+        '<label style="display:block;font-size:13px;font-weight:700;margin-top:12px">Deskripsi<textarea id="gwCmDesc" required rows="6" placeholder="Tuliskan deskripsi resmi..." style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px;resize:vertical">'+esc(item&&item.deskripsi||"")+'</textarea></label>');
     modal.innerHTML='<div style="background:#fff;width:min(620px,100%);border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.2);overflow:hidden">'+
-      '<div style="padding:18px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center"><strong style="font-size:18px">'+title+'</strong><button id="gwCmClose" style="border:0;background:none;font-size:22px;cursor:pointer">×</button></div>'+
-      '<form id="gwCmForm" style="padding:20px">'+
-      (type==="material"?"":'<label style="display:block;font-size:13px;font-weight:700;margin-bottom:12px">Kode<input id="gwCmKode" value="'+esc(kode)+'" placeholder="Contoh: CP 1 / TP 1.1" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>')+
-      '<label style="display:block;font-size:13px;font-weight:700"> '+(type==="material"?"Nama materi":"Deskripsi")+
-      '<textarea id="gwCmDesc" required rows="6" placeholder="'+(type==="material"?"Contoh: Bilangan Bulat":"Tuliskan deskripsi resmi...")+'" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px;resize:vertical">'+esc(desc)+'</textarea></label>'+
-      '<label style="display:block;font-size:13px;font-weight:700;margin-top:12px">Urutan<input id="gwCmOrder" type="number" min="0" value="'+order+'" style="width:120px;padding:10px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>'+
-      '<div id="gwCmMsg" style="font-size:13px;margin-top:10px"></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px"><button type="button" id="gwCmCancel" class="btn btn-ghost">Batal</button><button class="btn btn-primary">Simpan</button></div></form></div>';
+      '<div style="padding:18px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center"><strong style="font-size:18px">'+title+'</strong><button id="gwCmClose" type="button" style="border:0;background:none;font-size:22px;cursor:pointer">×</button></div>'+
+      '<form id="gwCmForm" style="padding:20px">'+html+
+      (subject?"":'<label style="display:block;font-size:13px;font-weight:700;margin-top:12px">Urutan<input id="gwCmOrder" type="number" min="0" value="'+(item&&item.urutan||0)+'" style="width:120px;padding:10px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>')+
+      '<div id="gwCmMsg" style="font-size:13px;color:#dc2626;margin-top:10px"></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px"><button type="button" id="gwCmCancel" class="btn btn-ghost">Batal</button><button class="btn btn-primary">Simpan</button></div></form></div>';
     document.body.appendChild(modal);
+    if(subject){$("gwCmJenjang").value=item&&item.jenjang||"SMP";$("gwCmFase").value=item&&item.fase||"D";$("gwCmSemester").value=item&&item.semester||"1";$("gwCmMapel").value=item&&item.mapel||"";}
     function close(){modal.remove();}
     $("gwCmClose").onclick=close;$("gwCmCancel").onclick=close;
-    $("gwCmForm").onsubmit=function(e){e.preventDefault();
-      var b={action:type,kode:document.getElementById("gwCmKode")?$("gwCmKode").value.trim():"",deskripsi:$("gwCmDesc").value.trim(),urutan:Number($("gwCmOrder").value||0)};
-      if(type==="material"){b.nama=b.deskripsi;delete b.deskripsi;b.subject_id=parent;} 
-      if(type==="cp"){b.material_id=parent;} if(type==="tp"){b.cp_id=parent;}
+    $("gwCmForm").onsubmit=function(e){e.preventDefault();var b={action:type};
+      if(subject){b.version_id=Number($("curVersion").value||0);b.jenjang=$("gwCmJenjang").value;b.fase=$("gwCmFase").value.trim();b.semester=$("gwCmSemester").value;b.mapel=$("gwCmMapel").value.trim();if(!b.mapel){$("gwCmMsg").textContent="Mata pelajaran wajib diisi.";return;}}
+      else{b.kode=document.getElementById("gwCmKode")?$("gwCmKode").value.trim():"";b.deskripsi=$("gwCmDesc").value.trim();b.urutan=Number($("gwCmOrder").value||0);if(type==="material"){b.nama=b.deskripsi;delete b.deskripsi;b.subject_id=parent;}if(type==="cp")b.material_id=parent;if(type==="tp")b.cp_id=parent;if(!b.deskripsi&&type!=="material"){$("gwCmMsg").textContent="Deskripsi wajib diisi.";return;}}
       if(isEdit)b.id=item.id;
-      if(!b.deskripsi && type==="material"){ $("gwCmMsg").textContent="Nama materi wajib diisi.";return; }
       api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200){close();loadCurriculum();}else $("gwCmMsg").textContent=r.data.error||"Gagal menyimpan.";});
     };
-    setTimeout(function(){var q=type==="material"?$("gwCmDesc"):($("gwCmKode")||$("gwCmDesc"));if(q)q.focus();},50);
+    setTimeout(function(){var q=subject?$("gwCmMapel"):($("gwCmDesc")||$("gwCmKode"));if(q)q.focus();},50);
   }
+
   function loadCurriculum(){
     var v=$("curVersion");
     var url="/api/platform-admin/curriculum"+(v&&v.value?("?version_id="+encodeURIComponent(v.value)):"");
@@ -193,7 +198,7 @@
     curriculumModal(type,parent,null);
   };
   window.editCurriculum=function(type,id){
-    api("GET","/api/platform-admin/curriculum").then(function(r){
+    api("GET","/api/platform-admin/curriculum?version_id="+encodeURIComponent($("curVersion").value||"")).then(function(r){
       var data=(r.data&&r.data.data)||[], found=null,parent=0;
       data.forEach(function(s){(s.materi||[]).forEach(function(m){if(type==="material"&&m.id===id){found=m;parent=s.id;} (m.cp||[]).forEach(function(cp){if(type==="cp"&&cp.id===id){found=cp;parent=m.id;} (cp.tp||[]).forEach(function(tp){if(type==="tp"&&tp.id===id){found=tp;parent=cp.id;}});});});});
       if(found)curriculumModal(type,parent,found);
