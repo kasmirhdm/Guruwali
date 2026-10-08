@@ -245,6 +245,48 @@ var GWCascade = (function () {
     updateFase(form);
   }
 
+
+  /* --- Master Kurikulum platform: guru memilih TP dengan checkbox --- */
+  function enhanceMasterTP(form) {
+    if (form.querySelector(".gw-tp-master")) return;
+    var j=field(form,"jenjang"), s=field(form,"semester"), m=field(form,"mapel"), mt=field(form,"materi");
+    if(!j || !s || !m || !mt) return;
+    var wrap=document.createElement("div");
+    wrap.className="gw-tp-master";
+    wrap.style.cssText="margin:10px 0;padding:12px;border:1px solid #dbeafe;border-radius:12px;background:#f8fbff;";
+    wrap.innerHTML='<div style="font-weight:700;margin-bottom:6px">🎯 Tujuan Pembelajaran</div><div class="gw-tp-hint" style="font-size:12px;color:#64748b;margin-bottom:8px">Pilih TP yang ingin digunakan.</div><div class="gw-tp-list"><span style="font-size:12px;color:#64748b">Pilih materi terlebih dahulu.</span></div>';
+    var hidden=document.createElement("textarea");
+    hidden.name="tp";
+    hidden.className="gw-tp-selected";
+    hidden.style.display="none";
+    wrap.appendChild(hidden);
+    mt.parentNode.parentNode.insertBefore(wrap, mt.parentNode.nextSibling);
+
+    function load(){
+      var params=new URLSearchParams({jenjang:j.value||"",semester:s.value||"",mapel:m.value||"",materi:mt.value||""});
+      var list=wrap.querySelector(".gw-tp-list");
+      if(!j.value||!s.value||!m.value||!mt.value||mt.value==="__custom__"){
+        list.innerHTML='<span style="font-size:12px;color:#64748b">Pilih materi yang tersedia di Master Kurikulum.</span>'; hidden.value=""; return;
+      }
+      list.innerHTML='<span style="font-size:12px;color:#64748b">Memuat TP...</span>';
+      fetch("/api/master-curriculum?"+params.toString()).then(function(r){return r.json();}).then(function(r){
+        var rows=r.data||[], tps=[];
+        rows.forEach(function(row){(row.tp||[]).forEach(function(tp){tps.push({materi:row.materi,cp:row.cp.deskripsi,kode:tp.kode,deskripsi:tp.deskripsi});});});
+        if(!tps.length){list.innerHTML='<span style="font-size:12px;color:#64748b">Belum ada TP untuk kombinasi ini.</span>';hidden.value="";return;}
+        list.innerHTML=tps.map(function(tp,i){
+          var text=(tp.kode?tp.kode+": ":"")+tp.deskripsi;
+          return '<label style="display:flex;gap:8px;align-items:flex-start;padding:8px 4px;border-bottom:1px solid #e5e7eb;cursor:pointer"><input type="checkbox" class="gw-tp-check" value="'+esc(text)+'" style="margin-top:3px"><span>'+esc(text)+'</span></label>';
+        }).join("");
+        list.querySelectorAll(".gw-tp-check").forEach(function(cb){cb.addEventListener("change",sync);});
+      }).catch(function(){list.innerHTML='<span style="font-size:12px;color:#dc2626">Gagal memuat Master Kurikulum.</span>';});
+    }
+    function sync(){hidden.value=Array.prototype.map.call(wrap.querySelectorAll(".gw-tp-check:checked"),function(x){return x.value;}).join("\n");}
+    [j,s,m].forEach(function(el){el.addEventListener("change",load);});
+    mt.addEventListener("change",load);
+    mt.addEventListener("input",load);
+    load();
+  }
+
   function enhance(form) {
     if (!M || !form || form.getAttribute("data-cascade")) return;
     form.setAttribute("data-cascade", "1");
@@ -310,6 +352,7 @@ var GWCascade = (function () {
     updateMapel(form);
     updateAlokasi(form);
     enhanceCp(form);
+    enhanceMasterTP(form);
   }
 
   return { enhance: enhance };
