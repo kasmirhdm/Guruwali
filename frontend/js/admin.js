@@ -109,6 +109,7 @@
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;padding:10px;background:#f8fafc;border-radius:10px">'+
         '<select id="curVersion" style="padding:9px;border:1px solid #ddd;border-radius:8px;min-width:220px">'+versions.map(function(v){return '<option value="'+v.id+'" '+(v.aktif?'selected':'')+'>'+esc(v.nama)+(v.aktif?' • AKTIF':'')+'</option>';}).join('')+'</select>'+
         '<button class="btn btn-ghost btn-small" id="activateVersionBtn">Aktifkan Versi</button>'+
+        '<button class="btn btn-ghost btn-small" id="cloneVersionBtn">Salin Versi</button>'+
         '<button class="btn btn-ghost btn-small" id="newVersionBtn">+ Versi Baru</button></div>'+
         '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0">'+
         '<input id="curJenjang" placeholder="Jenjang: SMP" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
@@ -120,6 +121,7 @@
       loadCurriculum();
       $("curVersion").onchange=function(){loadCurriculum();};
       $("activateVersionBtn").onclick=function(){var id=Number($("curVersion").value||0);if(!id)return;api("POST","/api/platform-admin/curriculum/save",{action:"activate-version",id:id}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal mengaktifkan versi.");});};
+      $("cloneVersionBtn").onclick=function(){var src=Number($("curVersion").value||0);if(!src)return;var nama=prompt("Nama versi baru, contoh: Kurikulum Merdeka 2027/2028");if(!nama)return;var tahun=prompt("Tahun ajaran","2027/2028")||"";api("POST","/api/platform-admin/curriculum/clone-version",{source_version_id:src,nama:nama,tahun_ajaran:tahun}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal menyalin versi.");});};
       $("newVersionBtn").onclick=function(){var nama=prompt("Nama versi, contoh: Kurikulum Merdeka 2027/2028");if(!nama)return;var tahun=prompt("Tahun ajaran, contoh: 2027/2028","2027/2028")||"";api("POST","/api/platform-admin/curriculum/save",{action:"version",nama:nama,tahun_ajaran:tahun}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal membuat versi.");});};
       $("addSubjectBtn").onclick=function(){
         var b={action:"subject",version_id:Number($("curVersion").value||0),jenjang:$("curJenjang").value.trim(),fase:$("curFase").value.trim(),semester:$("curSemester").value,mapel:$("curMapel").value.trim()};
@@ -158,12 +160,14 @@
     });
   }
   window.addCurriculumItem=function(type,id,parent){
-    var label=type==="material"?"Nama materi":type==="cp"?"Deskripsi CP":"Deskripsi TP";
-    var value=prompt("Masukkan "+label+":"); if(!value)return;
-    var b={action:type};
-    if(type==="material"){b.subject_id=parent;b.nama=value;}
-    if(type==="cp"){b.material_id=parent;b.deskripsi=value;}
-    if(type==="tp"){b.cp_id=parent;b.deskripsi=value;}
+    var title=type==="material"?"Tambah Materi":type==="cp"?"Tambah Capaian Pembelajaran":"Tambah Tujuan Pembelajaran";
+    var kode=prompt(title+" — kode (opsional):",""); 
+    var value=prompt(title+" — deskripsi:");
+    if(!value)return;
+    var b={action:type,kode:kode||"",deskripsi:value};
+    if(type==="material"){b.subject_id=parent;b.nama=value;delete b.deskripsi;}
+    if(type==="cp"){b.material_id=parent;}
+    if(type==="tp"){b.cp_id=parent;}
     api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menyimpan.");});
   };
   window.delCurriculum=function(type,id){if(!confirm("Hapus data ini? Data turunannya juga akan ikut dihapus."))return;api("POST","/api/platform-admin/curriculum/delete",{entity:type,id:id}).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menghapus.");});};
