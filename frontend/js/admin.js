@@ -199,10 +199,10 @@
           '<button class="btn btn-ghost btn-small" onclick="editCurriculum(\'subject\','+s.id+')" style="margin-right:5px">Edit</button><button class="btn btn-ghost btn-small" onclick="delCurriculum(\'subject\','+s.id+')" style="color:#ef4444">Hapus Mapel</button></div>'+
           '<div style="margin-top:12px">'+
           s.materi.map(function(m){
-            return '<div style="background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0"><strong>📖 '+esc(m.nama)+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'material\','+m.id+')" style="margin-left:8px">Edit</button> <button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\',0,'+s.id+')" style="margin-left:8px">+ Materi</button>'+
+            return '<div style="background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0"><strong>📖 '+esc(m.nama)+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'material\','+m.id+')" style="margin-left:8px">Edit</button> <button class="btn btn-ghost btn-small" onclick="delCurriculum(\'material\','+m.id+')" style="color:#ef4444;margin-left:4px">Hapus</button>'+
               '<div style="margin:8px 0 0 12px">'+
               m.cp.map(function(cp){
-                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'cp\','+cp.id+')" style="margin-left:6px">Edit</button><div>'+esc(cp.deskripsi)+'</div>'+
+                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'cp\','+cp.id+')" style="margin-left:6px">Edit</button> <button class="btn btn-ghost btn-small" onclick="delCurriculum(\'cp\','+cp.id+')" style="color:#ef4444;margin-left:4px">Hapus</button><div>'+esc(cp.deskripsi)+'</div>'+
                   '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'tp\',0,'+cp.id+')" style="margin-top:5px">+ TP</button>'+
                   '<div style="margin-left:12px">'+cp.tp.map(function(tp){return '<div style="padding:5px 0;font-size:13px">🎯 '+(tp.kode?'<b>'+esc(tp.kode)+'</b> ':'')+esc(tp.deskripsi)+' <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'tp\','+tp.id+')" style="margin-left:5px">Edit</button> <button onclick="delCurriculum(\'tp\','+tp.id+')" style="border:0;background:none;color:#ef4444;cursor:pointer">Hapus</button></div>';}).join("")+'</div>'+
                   '</div>';
@@ -219,7 +219,10 @@
   window.editCurriculum=function(type,id){
     api("GET","/api/platform-admin/curriculum?version_id="+encodeURIComponent($("curVersion").value||"")).then(function(r){
       var data=(r.data&&r.data.data)||[], found=null,parent=0;
-      data.forEach(function(s){(s.materi||[]).forEach(function(m){if(type==="material"&&m.id===id){found=m;parent=s.id;} (m.cp||[]).forEach(function(cp){if(type==="cp"&&cp.id===id){found=cp;parent=m.id;} (cp.tp||[]).forEach(function(tp){if(type==="tp"&&tp.id===id){found=tp;parent=cp.id;}});});});});
+      data.forEach(function(s){
+        if(type==="subject"&&s.id===id){found=s;parent=Number($("curVersion").value||0);}
+        (s.materi||[]).forEach(function(m){if(type==="material"&&m.id===id){found=m;parent=s.id;} (m.cp||[]).forEach(function(cp){if(type==="cp"&&cp.id===id){found=cp;parent=m.id;} (cp.tp||[]).forEach(function(tp){if(type==="tp"&&tp.id===id){found=tp;parent=cp.id;}});});});
+      });
       if(found)curriculumModal(type,parent,found);
     });
   };
