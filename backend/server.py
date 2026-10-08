@@ -471,7 +471,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not version_id:
                     vr=conn.execute("SELECT id FROM curriculum_versions WHERE aktif=1 LIMIT 1").fetchone()
                     version_id=vr["id"] if vr else 0
-                s=conn.execute("SELECT * FROM curriculum_subjects WHERE version_id=? AND jenjang=? AND semester=? AND mapel=? LIMIT 1",(version_id,jenjang,semester,mapel)).fetchone()(jenjang,semester,mapel)).fetchone()
+                s=conn.execute("SELECT * FROM curriculum_subjects WHERE version_id=? AND jenjang=? AND semester=? AND mapel=? LIMIT 1",(version_id,jenjang,semester,mapel)).fetchone()
                 data=[]
                 if s:
                     mats=conn.execute("SELECT * FROM curriculum_materials WHERE subject_id=? AND (?='' OR nama=?) ORDER BY urutan,nama",(s["id"],materi,materi)).fetchall()
@@ -589,7 +589,22 @@ class Handler(BaseHTTPRequestHandler):
             action=str(body.get("action",""))
             conn=db.get_conn()
             try:
-                if action=="subject":
+                if action=="version":
+                    nama=str(body.get("nama","")).strip()[:120]
+                    tahun=str(body.get("tahun_ajaran","")).strip()[:30]
+                    if not nama:
+                        self._send_json(400, {"error":"Nama versi wajib diisi."}); return
+                    if body.get("id"):
+                        cur=conn.execute("UPDATE curriculum_versions SET nama=?,tahun_ajaran=? WHERE id=?",(nama,tahun,int(body.get("id"))))
+                    else:
+                        cur=conn.execute("INSERT INTO curriculum_versions(nama,tahun_ajaran,aktif,created_at) VALUES(?,?,0,?)",(nama,tahun,db.now()))
+                elif action=="activate-version":
+                    vid=int(body.get("id",0))
+                    if not conn.execute("SELECT 1 FROM curriculum_versions WHERE id=?",(vid,)).fetchone():
+                        self._send_json(404, {"error":"Versi tidak ditemukan."}); return
+                    conn.execute("UPDATE curriculum_versions SET aktif=0")
+                    cur=conn.execute("UPDATE curriculum_versions SET aktif=1 WHERE id=?",(vid,))
+                elif action=="subject":
                     if body.get("id"): cur=conn.execute("UPDATE curriculum_subjects SET jenjang=?,fase=?,semester=?,mapel=? WHERE id=?",(str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],int(body.get("id"))))
                     else: cur=conn.execute("INSERT INTO curriculum_subjects(jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?)",
                         (str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],db.now()))
