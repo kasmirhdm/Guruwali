@@ -901,23 +901,15 @@ class Handler(BaseHTTPRequestHandler):
         if ai.provider() != "invibuilder":
             self._send_json(503, {"error": "Generate gambar belum tersedia."})
             return
-        # --- cek kuota (gambar = 2 kuota) ---
-        conn = db.get_conn()
-        try:
-            row = conn.execute(
-                "SELECT quota_used, quota_limit, is_pro FROM users WHERE id = ?",
-                (user["id"],),
-            ).fetchone()
-        finally:
-            conn.close()
+        # --- reservasi kuota atomik (gambar = 2 kuota) ---
+        consumed = school.consume_quota(user["id"], 2)
+        if not consumed:
+            sq=school.check_school_quota(user["id"])
+            msg = ("Kuota sekolah %s tidak cukup untuk gambar (2 kuota)." % sq["school_name"]) if sq else "Kuota tidak cukup (gambar = 2 kuota)."
+            self._send_json(402, {"error": msg})
+            return
         sq=school.check_school_quota(user["id"])
         school_row=school.get_user_school(user["id"]) if sq else None
-        if sq and sq["used"] + 2 > sq["limit"]:
-            self._send_json(402, {"error": "Kuota sekolah %s tidak cukup untuk gambar (2 kuota)." % sq["school_name"]})
-            return
-        if not sq and not row["is_pro"] and row["quota_used"] + 2 > row["quota_limit"]:
-            self._send_json(402, {"error": "Kuota tidak cukup (gambar = 2 kuota)."})
-            return
         # --- panggil AI image ---
         model_used = (body.get("model") or "").strip() or ai._IMAGE_MODEL
         style = (body.get("style") or "").strip()
@@ -925,6 +917,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             result = ai.generate_image(full_prompt, model=model_used)
         except RuntimeError as e:
+            school.refund_quota(consumed)
             self._send_json(502, {"error": str(e)})
             return
         # --- simpan hasil ---
@@ -940,10 +933,6 @@ class Handler(BaseHTTPRequestHandler):
         doc = None
         conn = db.get_conn()
         try:
-            if sq:
-                conn.execute("UPDATE schools SET quota_used = quota_used + 2 WHERE id = ?", (school_row["id"],))
-            else:
-                conn.execute("UPDATE users SET quota_used = quota_used + 2 WHERE id = ?", (user["id"],))
             title = f"Ilustrasi: {prompt[:50]}"
             content = f"![Ilustrasi]({image_url})\n\n*Prompt: {prompt}*"
             cur = conn.execute(
