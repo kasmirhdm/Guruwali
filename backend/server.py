@@ -34,7 +34,7 @@ PORT = int(os.environ.get("GURUWALI_PORT", "8081"))
 SECURE_COOKIE = os.environ.get("GURUWALI_SECURE_COOKIE", "").lower() in ("1", "true", "yes", "on")
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
 
-# Rate limit: 10 request/menit/IP untuk /api/*
+# Rate limit per IP untuk melindungi API dari abuse.
 RATE_WINDOW = 60
 RATE_MAX = 60
 AI_RATE_MAX = 20
@@ -78,6 +78,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        if SECURE_COOKIE:
+            self.send_header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'")
         if set_cookie:
             self.send_header(
                 "Set-Cookie",
