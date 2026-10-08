@@ -851,16 +851,27 @@ class Handler(BaseHTTPRequestHandler):
             ).fetchone()
         finally:
             conn.close()
+        # Kembalikan kuota yang benar-benar dipakai: kuota sekolah jika anggota sekolah Pro.
+        if sq:
+            quota_out = {
+                "used": school.get_user_school(user["id"])["quota_used"] or 0,
+                "limit": sq["limit"],
+                "is_pro": True,
+                "school": True,
+            }
+        else:
+            quota_out = {
+                "used": qrow["quota_used"],
+                "limit": qrow["quota_limit"],
+                "is_pro": bool(qrow["is_pro"]),
+                "school": False,
+            }
         self._send_json(200, {
             "content": content,
             "document": doc,
             "model": model_used,
             "model_label": ai.model_label(model_used),
-            "quota": {
-                "used": qrow["quota_used"],
-                "limit": qrow["quota_limit"],
-                "is_pro": bool(qrow["is_pro"]),
-            },
+            "quota": quota_out,
         })
 
     def _api_generate_image(self, body):
