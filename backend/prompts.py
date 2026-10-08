@@ -405,7 +405,7 @@ TEMPLATES = {
         "title": "Surat Tugas {keperluan}",
         "instr": (
             "Buatkan SURAT TUGAS resmi sekolah dengan format baku: kop surat (tulis "
-            "'[KOP SEKOLAH]' sebagai placeholder), nomor surat '[Nomor: .../..../2026]', "
+            "'[KOP SEKOLAH]' sebagai placeholder), nomor surat '[Nomor: .../..../{tahun}]', "
             "dasar/menimbang, isi penugasan (nama, NIP jika ada, keperluan, tanggal, tempat), "
             "tembusan, dan blok tanda tangan kepala sekolah dengan NIP. Gunakan bahasa "
             "administrasi yang formal."
@@ -430,7 +430,7 @@ TEMPLATES = {
         "title": "Proposal {kegiatan}",
         "instr": (
             "Buatkan PROPOSAL KEGIATAN sekolah yang lengkap dan persuasif: latar belakang "
-            "(pakai yang ditempel guru), dasar hukum yang relevan, tujuan, sasaran peserta, "
+            "(pakai yang ditempel guru), dasar hukum hanya jika diberikan guru; jika tidak, tulis "[Dasar hukum: diisi sesuai ketentuan sekolah]" tanpa mengarang, tujuan, sasaran peserta, "
             "waktu dan tempat, susunan panitia (struktur umum), rincian anggaran (tabel "
             "komponen + estimasi biaya dalam rupiah yang wajar), jadwal kegiatan, dan penutup. "
             "Akhiri dengan lembar pengesahan."
@@ -473,6 +473,7 @@ def build_prompt(gen_type, inputs):
     if not tpl:
         raise ValueError(f"Tipe generator tidak dikenal: {gen_type}")
     data = _ctx(inputs)
+    tahun = str(inputs.get("tahun") or __import__("datetime").datetime.now().year)
     extra = ""
     signature_types = {"modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
                        "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"}
@@ -508,7 +509,7 @@ def build_prompt(gen_type, inputs):
     if gen_type == "chat-bebas":
         extra = f"\nPertanyaan guru: {inputs.get('pesan', '')}\n"
     return (
-        f"{tpl['instr']}\n\n"
+        f"{tpl['instr'].replace("{tahun}", tahun)}\n\n"
         f"DATA DARI GURU:\n{data}\n{extra}\n"
         "Tulis hasil akhirnya saja dalam Bahasa Indonesia yang rapi. "
         "Jangan mengulang instruksi ini."
