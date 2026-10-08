@@ -228,7 +228,7 @@
       }
       function render(){
         var q=($("curSearch").value||"").trim(),j=$("curJenjangFilter").value,sem=$("curSemesterFilter").value;
-        var html="",shown=0;\n        var oldHint=$("curFilterCount");if(oldHint)oldHint.remove();
+        var html="",shown=0; var oldHint=$("curFilterCount");if(oldHint)oldHint.remove();
         data.forEach(function(s){
           if(j&&s.jenjang!==j)return;
           if(sem&&normSem(s.semester)!==sem)return;
