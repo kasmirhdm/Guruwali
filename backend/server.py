@@ -605,9 +605,17 @@ class Handler(BaseHTTPRequestHandler):
                     conn.execute("UPDATE curriculum_versions SET aktif=0")
                     cur=conn.execute("UPDATE curriculum_versions SET aktif=1 WHERE id=?",(vid,))
                 elif action=="subject":
-                    if body.get("id"): cur=conn.execute("UPDATE curriculum_subjects SET jenjang=?,fase=?,semester=?,mapel=? WHERE id=?",(str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],int(body.get("id"))))
-                    else: cur=conn.execute("INSERT INTO curriculum_subjects(jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?)",
-                        (str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],db.now()))
+                    vid=int(body.get("version_id",0))
+                    if not vid:
+                        vr=conn.execute("SELECT id FROM curriculum_versions WHERE aktif=1 LIMIT 1").fetchone()
+                        vid=vr["id"] if vr else 0
+                    if not vid:
+                        self._send_json(400, {"error":"Versi kurikulum belum tersedia."}); return
+                    if body.get("id"):
+                        cur=conn.execute("UPDATE curriculum_subjects SET version_id=?,jenjang=?,fase=?,semester=?,mapel=? WHERE id=?",(vid,str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],int(body.get("id"))))
+                    else:
+                        cur=conn.execute("INSERT INTO curriculum_subjects(version_id,jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?,?)",
+                            (vid,str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],db.now()))
                 elif action=="material":
                     if body.get("id"): cur=conn.execute("UPDATE curriculum_materials SET subject_id=?,nama=?,urutan=? WHERE id=?",(int(body.get("subject_id",0)),str(body.get("nama",""))[:200],int(body.get("urutan",0)),int(body.get("id"))))
                     else: cur=conn.execute("INSERT INTO curriculum_materials(subject_id,nama,urutan,created_at) VALUES(?,?,?,?)",
@@ -623,6 +631,43 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self._send_json(400, {"error":"Jenis master tidak dikenal."}); return
                 conn.commit(); self._send_json(200, {"ok":True,"id":cur.lastrowid})
+            except Exception as e:
+                conn.rollback(); self._send_json(400, {"error":str(e)})
+            finally: conn.close()
+            return
+
+        if path == "/api/platform-admin/curriculum/clone-version":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            src=int(body.get("source_version_id",0))
+            nama=str(body.get("nama","")).strip()[:120]
+            tahun=str(body.get("tahun_ajaran","")).strip()[:30]
+            if not src or not nama:
+                self._send_json(400, {"error":"Versi sumber dan nama versi baru wajib diisi."}); return
+            conn=db.get_conn()
+            try:
+                if not conn.execute("SELECT 1 FROM curriculum_versions WHERE id=?",(src,)).fetchone():
+                    self._send_json(404, {"error":"Versi sumber tidak ditemukan."}); return
+                cur=conn.execute("INSERT INTO curriculum_versions(nama,tahun_ajaran,aktif,created_at) VALUES(?,?,0,?)",(nama,tahun,db.now()))
+                dst=cur.lastrowid
+                subjects=conn.execute("SELECT * FROM curriculum_subjects WHERE version_id=? ORDER BY id",(src,)).fetchall()
+                for s in subjects:
+                    sc=conn.execute("INSERT INTO curriculum_subjects(version_id,jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?,?)",(dst,s["jenjang"],s["fase"],s["semester"],s["mapel"],db.now()))
+                    sm=sc.lastrowid
+                    mats=conn.execute("SELECT * FROM curriculum_materials WHERE subject_id=? ORDER BY urutan,id",(s["id"],)).fetchall()
+                    for m in mats:
+                        mc=conn.execute("INSERT INTO curriculum_materials(subject_id,nama,urutan,created_at) VALUES(?,?,?,?)",(sm,m["nama"],m["urutan"],db.now()))
+                        mm=mc.lastrowid
+                        cps=conn.execute("SELECT * FROM curriculum_cp WHERE material_id=? ORDER BY id",(m["id"],)).fetchall()
+                        for cp in cps:
+                            cc=conn.execute("INSERT INTO curriculum_cp(material_id,kode,deskripsi,created_at) VALUES(?,?,?,?)",(mm,cp["kode"],cp["deskripsi"],db.now()))
+                            cpnew=cc.lastrowid
+                            tps=conn.execute("SELECT * FROM curriculum_tp WHERE cp_id=? ORDER BY urutan,id",(cp["id"],)).fetchall()
+                            for tp in tps:
+                                conn.execute("INSERT INTO curriculum_tp(cp_id,kode,deskripsi,urutan,created_at) VALUES(?,?,?,?,?)",(cpnew,tp["kode"],tp["deskripsi"],tp["urutan"],db.now()))
+                conn.commit()
+                platform_admin.audit(user["id"],"clone_curriculum_version","curriculum_version",dst,{"source_version_id":src})
+                self._send_json(200, {"ok":True,"id":dst})
             except Exception as e:
                 conn.rollback(); self._send_json(400, {"error":str(e)})
             finally: conn.close()
