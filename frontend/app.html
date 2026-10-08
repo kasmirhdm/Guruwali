@@ -6,6 +6,7 @@
 <title>GuruWali — Ruang Kerja AI Guru</title>
 <link rel="stylesheet" href="/css/style.css?v=12">
 <link rel="stylesheet" href="/css/generators.css">
+<link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
 <header class="topbar">
@@ -25,6 +26,9 @@
       <a href="#chat" data-section="chat">Chat AI</a>
       <a href="#riwayat" data-section="riwayat">Riwayat</a>
       <a href="#profil" data-section="profil">Profil</a>
+      <a href="#school-admin" data-section="school-admin" id="navSchoolAdmin" class="hidden">Admin Sekolah</a>
+      <a href="#platform-admin" data-section="platform-admin" id="navPlatformAdmin" class="hidden">Admin GuruWali</a>
+      <a href="#upgrade" data-section="upgrade" id="navUpgrade" style="color:#7c3aed;font-weight:700">⭐ Upgrade</a>
     </nav>
     <div class="topbar-actions">
       <select id="modelSelect" class="model-select hidden" title="Model AI"></select>
@@ -60,6 +64,11 @@
           <label>Kata sandi<input type="password" id="loginPass" required autocomplete="current-password" placeholder="Masukkan kata sandi"></label>
           <p class="form-msg" id="loginMsg"></p>
           <button class="btn btn-primary btn-block auth-submit" type="submit">Masuk ke Dashboard</button>
+          <div style="display:flex;align-items:center;gap:12px;margin:16px 0;color:#999;font-size:13px"><span style="flex:1;height:1px;background:#e2e8f0"></span>atau<span style="flex:1;height:1px;background:#e2e8f0"></span></div>
+          <a href="/api/auth/google" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:12px;background:#fff;text-decoration:none;color:#333;font-weight:600;font-size:15px">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            Masuk dengan Google
+          </a>
           <p class="auth-note">Belum punya akun? <button type="button" class="auth-link" id="switchRegister">Daftar gratis</button></p>
         </form>
         <form id="registerForm" class="auth-form hidden">
@@ -258,6 +267,100 @@
   </section>
 
   <!-- PROFIL -->
+  <section id="sec-school-admin" class="app-section hidden">
+    <div class="admin-shell">
+      <div><h2>Admin Sekolah</h2><p class="muted">Semua fasilitas GuruWali tetap tersedia. Halaman ini menambahkan pengelolaan sekolah.</p></div>
+      <div id="schoolAdminContent"><div class="admin-card"><p class="admin-muted">Memuat data sekolah…</p></div></div>
+    </div>
+  </section>
+
+  <section id="sec-upgrade" class="app-section hidden">
+    <div style="max-width:900px;margin:0 auto;padding:20px 16px">
+      <div style="text-align:center;margin-bottom:32px">
+        <h1 style="font-size:28px;margin:0 0 8px">🚀 Upgrade GuruWali</h1>
+        <p style="color:#666;font-size:16px;margin:0">Pilih paket yang sesuai dengan kebutuhanmu.<br>Hemat waktu, fokus mengajar!</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+
+        <!-- GRATIS -->
+        <div style="background:#fff;border:2px solid #e2e8f0;border-radius:20px;padding:28px;text-align:center">
+          <h3 style="margin:0 0 4px;font-size:20px">Gratis</h3>
+          <p style="color:#888;font-size:13px;margin:0 0 16px">Untuk coba-coba</p>
+          <p style="font-size:36px;font-weight:800;margin:0 0 4px">Rp0</p>
+          <p style="color:#888;font-size:13px;margin:0 0 20px">selamanya</p>
+          <ul style="text-align:left;font-size:14px;color:#444;list-style:none;padding:0;margin:0 0 24px;line-height:2">
+            <li>✅ 5 dokumen / bulan</li>
+            <li>✅ 29 generator AI</li>
+            <li>✅ Riwayat tersimpan</li>
+            <li>❌ <span style="color:#aaa">Export Word & PDF</span></li>
+            <li>❌ <span style="color:#aaa">Prioritas generate</span></li>
+          </ul>
+          <button class="btn btn-ghost" style="width:100%;padding:12px" disabled>Paket Saat Ini</button>
+        </div>
+
+        <!-- PRO -->
+        <div style="background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:20px;padding:28px;text-align:center;color:#fff;position:relative;transform:scale(1.03);box-shadow:0 12px 40px rgba(124,58,237,.35)">
+          <span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#fbbf24;color:#78350f;font-size:12px;font-weight:800;padding:4px 16px;border-radius:20px">PALING POPULER</span>
+          <h3 style="margin:0 0 4px;font-size:20px;color:#fff">Pro</h3>
+          <p style="font-size:13px;margin:0 0 16px;opacity:.85">Untuk guru profesional</p>
+          <p style="font-size:36px;font-weight:800;margin:0 0 4px">Rp29<span style="font-size:18px">rb</span></p>
+          <p style="font-size:13px;margin:0 0 20px;opacity:.85">per bulan</p>
+          <ul style="text-align:left;font-size:14px;list-style:none;padding:0;margin:0 0 24px;line-height:2">
+            <li>✅ <strong>50 dokumen / bulan</strong></li>
+            <li>✅ 29 generator AI</li>
+            <li>✅ <strong>Export Word & PDF</strong></li>
+            <li>✅ <strong>Prioritas generate</strong> (lebih cepat)</li>
+            <li>✅ Riwayat tanpa batas</li>
+            <li>✅ Support prioritas</li>
+          </ul>
+          <button onclick="GWUpgrade.bayar('pro')" style="width:100%;padding:14px;border:none;border-radius:12px;background:#fff;color:#7c3aed;font-weight:800;font-size:16px;cursor:pointer">Upgrade ke Pro</button>
+          <p style="font-size:12px;margin:12px 0 0;opacity:.75">Kurang dari Rp1.000/hari!</p>
+        </div>
+
+        <!-- SEKOLAH -->
+        <div style="background:#fff;border:2px solid #16a34a;border-radius:20px;padding:28px;text-align:center;position:relative">
+          <span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;font-size:12px;font-weight:800;padding:4px 16px;border-radius:20px">HEMAT 90%</span>
+          <h3 style="margin:0 0 4px;font-size:20px">🏫 Sekolah</h3>
+          <p style="color:#888;font-size:13px;margin:0 0 16px">Untuk seluruh sekolah</p>
+          <p style="font-size:36px;font-weight:800;margin:0 0 4px;color:#16a34a">Rp199<span style="font-size:18px">rb</span></p>
+          <p style="color:#888;font-size:13px;margin:0 0 20px">per bulan / sekolah</p>
+          <ul style="text-align:left;font-size:14px;color:#444;list-style:none;padding:0;margin:0 0 24px;line-height:2">
+            <li>✅ <strong>1.000 dokumen / bulan</strong> (sharing)</li>
+            <li>✅ <strong>Unlimited guru</strong></li>
+            <li>✅ Semua fitur Pro</li>
+            <li>✅ Dashboard admin sekolah</li>
+            <li>✅ Kode undangan guru</li>
+            <li>✅ Import data Dapodik</li>
+            <li>✅ Bisa pakai dana BOS</li>
+          </ul>
+          <button onclick="GWUpgrade.bayar('sekolah')" style="width:100%;padding:14px;border:none;border-radius:12px;background:#16a34a;color:#fff;font-weight:800;font-size:16px;cursor:pointer">Pilih Paket Sekolah</button>
+          <p style="font-size:12px;margin:12px 0 0;color:#16a34a;font-weight:600">20 guru = cuma Rp10rb/guru!</p>
+        </div>
+      </div>
+
+      <!-- Keuntungan -->
+      <div style="margin-top:40px;background:#f8fafc;border-radius:16px;padding:28px">
+        <h3 style="text-align:center;margin:0 0 20px">💡 Kenapa GuruWali?</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;font-size:14px">
+          <div style="text-align:center"><div style="font-size:32px">⏰</div><strong>Hemat 10+ jam/minggu</strong><br><span style="color:#666">Administrasi otomatis, fokus mengajar</span></div>
+          <div style="text-align:center"><div style="font-size:32px">📚</div><strong>Kurikulum Merdeka</strong><br><span style="color:#666">Sesuai standar 2025 terbaru</span></div>
+          <div style="text-align:center"><div style="font-size:32px">📄</div><strong>Word & PDF Siap Cetak</strong><br><span style="color:#666">Tinggal print, langsung pakai</span></div>
+          <div style="text-align:center"><div style="font-size:32px">🤖</div><strong>AI Berbahasa Indonesia</strong><br><span style="color:#666">Paham konteks sekolah Indonesia</span></div>
+        </div>
+      </div>
+
+      <!-- Pembayaran -->
+      <div id="gw-bayar-box" style="margin-top:24px"></div>
+    </div>
+  </section>
+
+  <section id="sec-platform-admin" class="app-section hidden">
+    <div class="admin-shell">
+      <div><h2>Admin GuruWali</h2><p class="muted">Pusat pengelolaan platform GuruWali.</p></div>
+      <div id="platformAdminContent"><div class="admin-card"><p class="admin-muted">Memuat dashboard…</p></div></div>
+    </div>
+  </section>
+
   <section id="sec-profil" class="app-section hidden">
     <h2>Profil Guru</h2>
     <form id="profileForm" class="form-card">
@@ -331,5 +434,6 @@
 <script src="/js/cascade.js?v=2"></script>
 <script src="/js/app.js"></script>
 <script src="/js/school.js"></script>
+<script src="/js/admin.js"></script>
 </body>
 </html>

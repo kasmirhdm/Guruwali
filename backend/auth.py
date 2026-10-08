@@ -121,6 +121,8 @@ def public_user(row):
         "kop_telp": row["kop_telp"],
         "kop_email": row["kop_email"],
         "kop_website": row["kop_website"],
+        "school_id": row["school_id"],
+        "is_platform_admin": bool(row["is_platform_admin"]),
         "quota_used": row["quota_used"],
         "quota_limit": row["quota_limit"],
         "is_pro": bool(row["is_pro"]),

@@ -13,6 +13,13 @@ Ketentuan wajib yang dipakai SEMUA generator:
 import re
 
 SYSTEM_ID = (
+    "ATURAN MATEMATIKA (SANGAT PENTING):\n"
+    "1. JANGAN PERNAH pakai tanda dolar $ untuk matematika. SALAH: $x$, $2x+y$. BENAR: x, 2x + y = 9.000.\n"
+    "2. Tulis variabel dan persamaan langsung tanpa pembungkus apapun.\n"
+    "3. Gunakan karakter Unicode: \u00d7 \u00f7 \u00b1 \u2212 \u221a \u00b2 \u00b3 \u00b0 \u2260 \u2264 \u2265.\n"
+    "4. Pecahan tulis biasa: 3/4.\n"
+    "5. JANGAN pakai \\times, \\frac, \\sqrt atau perintah LaTeX/backslash apapun.\n"
+
     "Kamu adalah GURU AI, asisten profesional untuk guru Indonesia. "
     "Tugasmu menghasilkan bahan dan perangkat pembelajaran yang akurat, relevan, konsisten, "
     "praktis, dan siap digunakan.\n"
@@ -477,8 +484,8 @@ def build_prompt(gen_type, inputs):
             "Jika kop_mode bukan 'tanpa', buat kop di bagian paling atas sebelum judul dokumen. "
             "Gunakan data kop yang diberikan apa adanya: [JUDUL KOP], [SUBJUDUL KOP], nama sekolah, "
             "alamat, NPSN, telepon, email, dan informasi kontak lain. Jangan mengarang data yang kosong; "
-            "gunakan placeholder [JUDUL KOP], [SUBJUDUL KOP], [ALAMAT SEKOLAH], [NPSN], [TELEPON], [EMAIL]. "
-            "Setelah kop, buat garis pemisah yang jelas. JANGAN tulis judul ganda. Mulai dokumen LANGSUNG dengan blok KOP. Untuk kop_mode 'admin', jangan menambahkan kop "
+            "gunakan placeholder [JUDUL KOP], [SUBJUDUL KOP], [NAMA SEKOLAH], [ALAMAT SEKOLAH], [NPSN], [TELEPON], [EMAIL]. "
+            "Bungkus kop dengan marker [[KOP]] dan [[/KOP]], satu baris per informasi. Setelah kop, buat garis pemisah yang jelas. JANGAN tulis judul ganda. Mulai dokumen LANGSUNG dengan blok KOP. Untuk kop_mode 'admin', jangan menambahkan kop "
             "ke dokumen non-administrasi; untuk 'semua', ikuti aturan ini pada dokumen formal."
         )
     if gen_type in signature_types:
@@ -491,7 +498,7 @@ def build_prompt(gen_type, inputs):
             "[NIP GURU], [JABATAN GURU], [KOTA], dan [TANGGAL] bila datanya belum tersedia. "
             "Untuk mode guru-kepala, buat dua blok tanda tangan; untuk guru-saja hanya blok guru; "
             "untuk kepala-saja hanya blok kepala sekolah; untuk tanpa-tanda-tangan jangan membuat "
-            "blok tanda tangan. Jangan membuat tanda tangan fiktif atau gambar tanda tangan."
+            "blok tanda tangan. Bungkus blok tanda tangan dengan marker [[TTD]] dan [[/TTD]], gunakan | untuk memisahkan kolom kiri dan kanan. Jangan membuat tanda tangan fiktif atau gambar tanda tangan."
         )
     if gen_type == "proposal":
         extra += (

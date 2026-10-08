@@ -13,7 +13,7 @@ def create_school(admin_user_id, nama, npsn="", alamat="", kota="", telp="", ema
     conn = db.get_conn()
     try:
         cur = conn.execute(
-            "INSERT INTO schools (nama, npsn, alamat, kota, telp, email, admin_user_id, created_at)"
+            "INSERT INTO schools (nama, npsn, alamat, kota, telp, email, admin_user_id, quota_limit, created_at)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (nama, npsn, alamat, kota, telp, email, admin_user_id, now()),
         )
@@ -71,12 +71,6 @@ def generate_invite_code(school_id):
     code = secrets.token_hex(4).upper()
     conn = db.get_conn()
     try:
-        # Simpan kode di tabel khusus atau pakai kolom sementara
-        # Untuk simpel: simpan di schools.invite_code (buat kolom jika belum ada)
-        try:
-            conn.execute("ALTER TABLE schools ADD COLUMN invite_code TEXT DEFAULT ''")
-        except Exception:
-            pass
         conn.execute("UPDATE schools SET invite_code = ? WHERE id = ?", (code, school_id))
         conn.commit()
         return code
@@ -88,10 +82,6 @@ def join_school(user_id, invite_code):
     """Gabung ke sekolah via kode undangan."""
     conn = db.get_conn()
     try:
-        try:
-            conn.execute("ALTER TABLE schools ADD COLUMN invite_code TEXT DEFAULT ''")
-        except Exception:
-            pass
         row = conn.execute(
             "SELECT id FROM schools WHERE invite_code = ?", (invite_code.upper(),)
         ).fetchone()

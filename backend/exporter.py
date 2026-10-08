@@ -229,8 +229,23 @@ def to_pdf(title, content):
         return text
 
     ttd_data, content = _extract_ttd(content)
-    story = [Paragraph(md2html(title or "Dokumen GuruWali"), s_title),
-             Spacer(1, 6)]
+    kop_data, content = _extract_kop(content)
+
+    story = []
+    if kop_data:
+        kop_style = ParagraphStyle(
+            "GWKop", parent=styles["Normal"], fontSize=10.5,
+            leading=13, alignment=1, spaceAfter=1
+        )
+        for kl in kop_data:
+            story.append(Paragraph(md2html(kl), kop_style))
+        story.append(HRFlowable(width="100%", thickness=1.2, spaceAfter=10,
+                                spaceBefore=5))
+        story.append(Spacer(1, 2))
+    story.extend([
+        Paragraph(md2html(title or "Dokumen GuruWali"), s_title),
+        Spacer(1, 6),
+    ])
     for kind, text in _parse_blocks(content):
         if kind == "h1":
             story.append(Paragraph(md2html(text), s_h1))

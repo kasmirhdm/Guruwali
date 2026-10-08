@@ -99,7 +99,7 @@
 
   /* ================= navigasi 12 seksi ================= */
   var SECTIONS = ["beranda", "perangkat", "materi", "soal", "penilaian", "media",
-                  "alat", "admin", "dokumen", "chat", "riwayat", "profil"];
+                  "alat", "admin", "dokumen", "chat", "riwayat", "profil", "school-admin", "platform-admin", "upgrade"];
 
   function showSection(name) {
     if (SECTIONS.indexOf(name) < 0) name = "beranda";
@@ -143,13 +143,27 @@
 
   function refreshAuthUI() {
     var logged = !!state.user;
+    window.gwUser = state.user;
+    if (window.gwAdmin && window.gwAdmin.refresh) window.gwAdmin.refresh();
+    if (window.GWSchool) {
+      if (logged) window.GWSchool.load();
+      else if (window.GWSchool.hide) window.GWSchool.hide();
+    }
+    if (window.GWDapodik) {
+      if (logged) window.GWDapodik.show();
+      else if (window.GWDapodik.hide) window.GWDapodik.hide();
+    }
     $("authBox").classList.toggle("hidden", logged);
     $("logoutBtn").classList.toggle("hidden", !logged);
+    var nav = $("appNav");
+    if (nav) nav.classList.toggle("hidden", !logged);
+    var nt = $("navToggle");
+    if (nt) nt.classList.toggle("hidden", !logged);
     var badge = $("userBadge");
     badge.classList.toggle("hidden", !logged);
     if (logged) badge.innerHTML = icon("user", 16) + " " + esc(state.user.nama || state.user.email);
     if (logged) { hideAuth(); route(); fillProfile(); buildQuickAccess(); buildGenerators(); loadModels(); }
-    else { showAuth("login"); var ms = $("modelSelect"); if (ms) ms.classList.add("hidden"); }
+    else { var hh=(location.hash||"").replace("#",""); showAuth(hh==="daftar"?"register":"login"); var ms = $("modelSelect"); if (ms) ms.classList.add("hidden"); }
   }
 
   function loadMe() {
@@ -602,6 +616,9 @@
 
   /* ---------- hasil generate ---------- */
   function dlExport(id, fmt) {
+    var u = window.gwUser || (typeof state !== "undefined" ? state.user : null);
+    var isPro = u && (u.is_pro || u.school_id);
+    if (!isPro) { if (confirm("Export Word/PDF hanya untuk pengguna Pro.\n\nBuka halaman Upgrade?")) location.hash = "#upgrade"; return; }
     window.location.href = "/api/documents/" + id + "/export?format=" + fmt;
   }
 

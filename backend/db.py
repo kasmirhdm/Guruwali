@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
     kop_telp TEXT DEFAULT '',
     kop_email TEXT DEFAULT '',
     kop_website TEXT DEFAULT '',
+    school_id INTEGER,
+    is_platform_admin INTEGER DEFAULT 0,
     quota_used INTEGER DEFAULT 0,
     quota_limit INTEGER DEFAULT 5,
     is_pro INTEGER DEFAULT 0,
@@ -50,22 +52,56 @@ CREATE TABLE IF NOT EXISTS documents (
     updated_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS schools (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama TEXT NOT NULL,
+    npsn TEXT DEFAULT '',
+    alamat TEXT DEFAULT '',
+    kota TEXT DEFAULT '',
+    telp TEXT DEFAULT '',
+    email TEXT DEFAULT '',
+    invite_code TEXT DEFAULT '',
+    admin_user_id INTEGER NOT NULL,
+    quota_used INTEGER DEFAULT 0,
+    quota_limit INTEGER DEFAULT 1000,
+    is_pro INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_schools_invite ON schools(invite_code);
+CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,action TEXT NOT NULL,target_type TEXT DEFAULT '',target_id INTEGER,details TEXT DEFAULT '',created_at INTEGER NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
+CREATE TABLE IF NOT EXISTS school_members (
+    school_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    role TEXT NOT NULL DEFAULT 'guru',
+    joined_at INTEGER NOT NULL,
+    PRIMARY KEY (school_id, user_id),
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_school_members_user ON school_members(user_id);
+CREATE TABLE IF NOT EXISTS dapodik_imports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    filename TEXT DEFAULT '',
+    rows_imported INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_dapodik_imports_user ON dapodik_imports(user_id);
 CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 """
-
 
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-
 def init_db():
     conn = get_conn()
     try:
         conn.executescript(SCHEMA)
-        # Migrasi ringan untuk instalasi lama yang sudah memiliki users.
         existing = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
         migrations = {
             "npsn": "TEXT DEFAULT ''",
@@ -82,14 +118,23 @@ def init_db():
             "kop_telp": "TEXT DEFAULT ''",
             "kop_email": "TEXT DEFAULT ''",
             "kop_website": "TEXT DEFAULT ''",
+            "school_id": "INTEGER",
+            "is_platform_admin": "INTEGER DEFAULT 0",
         }
         for name, definition in migrations.items():
             if name not in existing:
                 conn.execute(f"ALTER TABLE users ADD COLUMN {name} {definition}")
+        school_cols = {row["name"] for row in conn.execute("PRAGMA table_info(schools)").fetchall()}
+        school_migrations = {
+            "telp": "TEXT DEFAULT ''", "email": "TEXT DEFAULT ''", "invite_code": "TEXT DEFAULT ''",
+            "quota_used": "INTEGER DEFAULT 0", "quota_limit": "INTEGER DEFAULT 1000", "is_pro": "INTEGER DEFAULT 0"
+        }
+        for name, definition in school_migrations.items():
+            if name not in school_cols:
+                conn.execute(f"ALTER TABLE schools ADD COLUMN {name} {definition}")
         conn.commit()
     finally:
         conn.close()
-
 
 def now():
     return int(time.time())

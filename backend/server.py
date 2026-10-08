@@ -21,11 +21,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import ai
 import auth
+import google_auth
 import db
 import school
 import dapodik
 import exporter
 import prompts
+import platform_admin
 
 HOST = os.environ.get("GURUWALI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("GURUWALI_PORT", "8081"))
@@ -247,6 +249,14 @@ class Handler(BaseHTTPRequestHandler):
         if not user:
             self._send_json(401, {"error": "Belum masuk."})
             return
+        # Export hanya untuk Pro (perorangan atau via sekolah)
+        is_pro = user.get("is_pro")
+        if not is_pro:
+            sq = school.check_school_quota(user["id"])
+            is_pro = bool(sq)
+        if not is_pro:
+            self._send_json(403, {"error": "Export Word/PDF hanya untuk pengguna Pro. Upgrade di menu Upgrade!"})
+            return
         conn = db.get_conn()
         try:
             row = conn.execute(
@@ -276,7 +286,79 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json(500, {"error": "Gagal membuat file: %s" % e})
 
+    def _redirect(self, url, set_cookie=None):
+        self.send_response(302)
+        self.send_header("Location", url)
+        if set_cookie:
+            secure = "; Secure" if SECURE_COOKIE else ""
+            self.send_header("Set-Cookie",
+                f"gw_session={set_cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age={14*24*3600}" + secure)
+        self.end_headers()
+
     def _api_get(self, path, qs):
+        # Google OAuth login
+        if path == "/api/auth/google":
+            if not google_auth.is_configured():
+                self._send_json(500, {"error": "Google login belum dikonfigurasi."})
+                return
+            self._redirect(google_auth.get_login_url())
+            return
+        if path == "/api/auth/google/callback":
+            code = (qs.get("code") or [None])[0]
+            state = (qs.get("state") or [None])[0]
+            err = (qs.get("error") or [None])[0]
+            if err or not code:
+                self._redirect("/app.html#masuk?error=" + (err or "batal"))
+                return
+            if not google_auth.verify_state(state):
+                self._redirect("/app.html#masuk?error=state")
+                return
+            userinfo, uerr = google_auth.exchange_code(code)
+            if uerr or not userinfo or not userinfo.get("email"):
+                self._redirect("/app.html#masuk?error=gagal")
+                return
+            email = userinfo["email"].lower().strip()
+            nama = userinfo.get("name", email.split("@")[0])
+            # Cari atau buat user
+            conn = db.get_conn()
+            try:
+                row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+                if row:
+                    uid = row["id"]
+                else:
+                    from datetime import datetime
+                    cur = conn.execute(
+                        "INSERT INTO users (email, password_hash, nama, quota_limit, created_at) VALUES (?,?,?,?,?)",
+                        (email, "google-oauth", nama, 5, datetime.now().isoformat()))
+                    conn.commit()
+                    uid = cur.lastrowid
+                user = conn.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+            finally:
+                conn.close()
+            token = auth.create_session(uid)
+            self._redirect("/app.html#beranda", set_cookie=token)
+            return
+        # Master Data GET - hanya platform admin
+        if path == "/api/platform-admin/master-cp":
+            user = self._user()
+            if not user or not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses ditolak."}); return
+            conn = db.get_conn()
+            try:
+                rows = conn.execute("SELECT * FROM master_cp ORDER BY jenjang, fase, mapel").fetchall()
+                self._send_json(200, {"data": [dict(r) for r in rows]})
+            finally: conn.close()
+            return
+        if path == "/api/platform-admin/master-tp":
+            user = self._user()
+            if not user or not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses ditolak."}); return
+            conn = db.get_conn()
+            try:
+                rows = conn.execute("SELECT * FROM master_tp ORDER BY jenjang, fase, mapel").fetchall()
+                self._send_json(200, {"data": [dict(r) for r in rows]})
+            finally: conn.close()
+            return
         if path == "/api/me":
             user = self._user()
             if not user:
@@ -325,6 +407,26 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        if path == "/api/platform-admin/dashboard":
+            user=self._user()
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            self._send_json(200, {"dashboard":platform_admin.dashboard()}); return
+        if path == "/api/platform-admin/users":
+            user=self._user()
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            self._send_json(200, {"users":platform_admin.users()}); return
+        if path == "/api/platform-admin/schools":
+            user=self._user()
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            self._send_json(200, {"schools":platform_admin.schools()}); return
+        if path == "/api/platform-admin/audit":
+            user=self._user()
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            self._send_json(200, {"logs":platform_admin.recent_audit()}); return
         if path == "/api/school":
             user = self._user()
             if not user:
@@ -405,6 +507,67 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(401, {"error": "Belum masuk."})
             return
 
+        if path == "/api/platform-admin/user-pro":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            ok=platform_admin.set_user_pro(int(body.get("user_id",0)),bool(body.get("enabled")),user["id"])
+            self._send_json(200 if ok else 404, {"ok":ok}); return
+        if path == "/api/platform-admin/school-pro":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            ok=platform_admin.set_school_pro(int(body.get("school_id",0)),bool(body.get("enabled")),user["id"])
+            self._send_json(200 if ok else 404, {"ok":ok}); return
+        # === Master Data (CP/TP) - hanya platform admin ===
+        if path == "/api/platform-admin/master-cp/add":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses ditolak."}); return
+            body = self._read_json()
+            conn = db.get_conn()
+            try:
+                cur = conn.execute(
+                    "INSERT INTO master_cp (jenjang, fase, mapel, kode, deskripsi) VALUES (?,?,?,?,?)",
+                    (body.get("jenjang",""), body.get("fase",""), body.get("mapel",""),
+                     body.get("kode",""), body.get("deskripsi","")))
+                conn.commit()
+                self._send_json(200, {"ok": True, "id": cur.lastrowid})
+            finally: conn.close()
+            return
+        if path == "/api/platform-admin/master-cp/delete":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses ditolak."}); return
+            body = self._read_json()
+            conn = db.get_conn()
+            try:
+                conn.execute("DELETE FROM master_cp WHERE id = ?", (body.get("id",0),))
+                conn.commit()
+                self._send_json(200, {"ok": True})
+            finally: conn.close()
+            return
+        if path == "/api/platform-admin/master-tp/add":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses ditolak."}); return
+            body = self._read_json()
+            conn = db.get_conn()
+            try:
+                cur = conn.execute(
+                    "INSERT INTO master_tp (cp_id, jenjang, fase, mapel, kelas, deskripsi) VALUES (?,?,?,?,?,?)",
+                    (body.get("cp_id"), body.get("jenjang",""), body.get("fase",""),
+                     body.get("mapel",""), body.get("kelas",""), body.get("deskripsi","")))
+                conn.commit()
+                self._send_json(200, {"ok": True, "id": cur.lastrowid})
+            finally: conn.close()
+            return
+        if path == "/api/platform-admin/master-tp/delete":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses ditolak."}); return
+            body = self._read_json()
+            conn = db.get_conn()
+            try:
+                conn.execute("DELETE FROM master_tp WHERE id = ?", (body.get("id",0),))
+                conn.commit()
+                self._send_json(200, {"ok": True})
+            finally: conn.close()
+            return
         if path == "/api/school/create":
             user = self._user()
             if not user:
@@ -464,6 +627,11 @@ class Handler(BaseHTTPRequestHandler):
             if not user:
                 self._send_json(401, {"error": "Belum masuk."})
                 return
+            # Hanya admin sekolah yang boleh import Dapodik
+            u_school = user.get("school_id")
+            if not u_school or not school.is_school_admin(user["id"], u_school):
+                self._send_json(403, {"error": "Hanya admin sekolah yang dapat import Dapodik."})
+                return
             body = self._read_json()
             csv_text = body.get("csv", "")
             if not csv_text or len(csv_text) > 500000:
@@ -496,6 +664,20 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": ok, "imported": target,
                 "message": f"Profil diperbarui dari Dapodik.{school_msg}"})
             return
+        if path == "/api/school/update":
+            s=school.get_user_school(user["id"])
+            if not s or not school.is_school_admin(user["id"],s["id"]):
+                self._send_json(403, {"error":"Hanya admin sekolah."}); return
+            fields={k:str(body.get(k,""))[:200] for k in ("nama","npsn","alamat","kota","telp","email") if k in body}
+            if not fields:
+                self._send_json(400, {"error":"Tidak ada perubahan."}); return
+            conn=db.get_conn()
+            try:
+                sets=", ".join(f"{k}=?" for k in fields)
+                conn.execute(f"UPDATE schools SET {sets} WHERE id=?",list(fields.values())+[s["id"]]); conn.commit()
+            finally: conn.close()
+            platform_admin.audit(user["id"],"update_school","school",s["id"],fields)
+            self._send_json(200, {"school":school.get_school(s["id"])}); return
         if path == "/api/school/leave":
             user = self._user()
             if not user:
@@ -683,7 +865,12 @@ class Handler(BaseHTTPRequestHandler):
             ).fetchone()
         finally:
             conn.close()
-        if not row["is_pro"] and row["quota_used"] + 2 > row["quota_limit"]:
+        sq=school.check_school_quota(user["id"])
+        school_row=school.get_user_school(user["id"]) if sq else None
+        if sq and sq["used"] + 2 > sq["limit"]:
+            self._send_json(402, {"error": "Kuota sekolah %s tidak cukup untuk gambar (2 kuota)." % sq["school_name"]})
+            return
+        if not sq and not row["is_pro"] and row["quota_used"] + 2 > row["quota_limit"]:
             self._send_json(402, {"error": "Kuota tidak cukup (gambar = 2 kuota)."})
             return
         # --- panggil AI image ---
@@ -708,9 +895,10 @@ class Handler(BaseHTTPRequestHandler):
         doc = None
         conn = db.get_conn()
         try:
-            conn.execute(
-                "UPDATE users SET quota_used = quota_used + 2 WHERE id = ?", (user["id"],)
-            )
+            if sq:
+                conn.execute("UPDATE schools SET quota_used = quota_used + 2 WHERE id = ?", (school_row["id"],))
+            else:
+                conn.execute("UPDATE users SET quota_used = quota_used + 2 WHERE id = ?", (user["id"],))
             title = f"Ilustrasi: {prompt[:50]}"
             content = f"![Ilustrasi]({image_url})\n\n*Prompt: {prompt}*"
             cur = conn.execute(
@@ -734,9 +922,10 @@ class Handler(BaseHTTPRequestHandler):
             "document": doc,
             "model": model_used,
             "quota": {
-                "used": qrow["quota_used"],
-                "limit": qrow["quota_limit"],
-                "is_pro": bool(qrow["is_pro"]),
+                "used": (sq["used"] + 2) if sq else qrow["quota_used"],
+                "limit": sq["limit"] if sq else qrow["quota_limit"],
+                "is_pro": True if sq else bool(qrow["is_pro"]),
+                "school": bool(sq),
             },
         })
 
@@ -793,6 +982,7 @@ def _doc(row):
 
 def main():
     db.init_db()
+    platform_admin.bootstrap_env_admins()
     srv = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"GuruWali berjalan di http://{HOST}:{PORT} (Ctrl+C untuk berhenti)")
     try:

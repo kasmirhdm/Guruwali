@@ -3,6 +3,7 @@ const GWSchool = {
   data: null,
 
   async load() {
+    if (!window.gwUser) { this.hide(); return; }
     try {
       const r = await fetch('/api/school', {credentials: 'include'});
       const d = await r.json();
@@ -11,7 +12,13 @@ const GWSchool = {
     } catch(e) { /* silent */ }
   },
 
+  hide() {
+    const el = document.getElementById('gw-school-section');
+    if (el) el.remove();
+  },
+
   render() {
+    if (!window.gwUser) { this.hide(); return; }
     let el = document.getElementById('gw-school-section');
     if (!el) {
       // Buat section di menu
@@ -116,12 +123,20 @@ const GWSchool = {
   }
 };
 
-// Load saat halaman siap
-document.addEventListener('DOMContentLoaded', () => setTimeout(() => GWSchool.load(), 1500));
+// Section sekolah hanya dibuat setelah pengguna berhasil masuk.
+document.addEventListener('DOMContentLoaded', () => GWSchool.load());
 
 // --- Dapodik Import UI ---
 var GWDapodik = {
+  hide: function() {
+    var el = document.getElementById('gw-dapodik-section');
+    if (el) el.remove();
+  },
   show: function() {
+    if (!window.gwUser) { this.hide(); return; }
+    // Hanya tampil untuk admin sekolah (operator sekolah)
+    var isAdmin = (typeof GWSchool !== 'undefined' && GWSchool.data && GWSchool.data.is_admin);
+    if (!isAdmin) { this.hide(); return; }
     var el = document.getElementById('gw-dapodik-section');
     if (!el) {
       el = document.createElement('div');
@@ -157,4 +172,4 @@ var GWDapodik = {
     reader.readAsText(f);
   }
 };
-document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ GWDapodik.show(); }, 2000); });
+document.addEventListener('DOMContentLoaded', function(){ GWDapodik.show(); });
