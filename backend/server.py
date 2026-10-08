@@ -687,7 +687,7 @@ class Handler(BaseHTTPRequestHandler):
             s=school.get_user_school(user["id"])
             if not s or not school.is_school_admin(user["id"],s["id"]):
                 self._send_json(403, {"error":"Hanya admin sekolah."}); return
-            fields={k:str(body.get(k,""))[:200] for k in ("nama","npsn","alamat","kota","telp","email") if k in body}
+            fields={k:str(body.get(k,""))[:200] for k in ("nama","npsn","alamat","kota","telp","email","nama_kepala","nip_kepala","kop_judul","kop_subjudul","kop_website") if k in body}
             if not fields:
                 self._send_json(400, {"error":"Tidak ada perubahan."}); return
             conn=db.get_conn()
