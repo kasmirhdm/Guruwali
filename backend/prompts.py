@@ -209,7 +209,7 @@ TEMPLATES = {
         "title": "Materi {materi} - Kelas {kelas}",
         "instr": (
             "Buatkan MATERI PEMBELAJARAN yang lengkap dan akurat untuk guru sebagai bahan "
-            "ajar: penjelasan konsep yang sistematis dan mendalam, contoh-contoh konkret "
+            "ajar: penjelasan konsep sesuai tingkat kedalaman yang dipilih guru (Ringkas, Sedang, atau Mendalam), "
             "kontekstual Indonesia, ilustrasi/deskripsi visual yang membantu, kesalahpahaman "
             "umum peserta didik beserta klarifikasinya, dan rangkuman poin penting di akhir. "
             "Akhiri dengan 5 pertanyaan pemantik diskusi kelas."
@@ -244,7 +244,7 @@ TEMPLATES = {
         "maxtokens": 8000,
         "title": "Soal PG {materi} - Kelas {kelas}",
         "instr": (
-            "Buatkan SOAL PILIHAN GANDA sesuai jumlah yang diminta. Sebelum menampilkan hasil, selesaikan dan verifikasi setiap soal secara internal. "
+            "Buatkan SOAL PILIHAN GANDA sesuai jumlah dan level kognitif yang dipilih guru. Sebelum menampilkan hasil, selesaikan dan verifikasi setiap soal secara internal. "
             "Setiap soal punya stimulus singkat (teks/gambar deskriptif/data), 4 opsi jawaban (A-D) dengan pengecoh yang "
             "masuk akal, dan sebaran level kognitif (C1-C6) yang merata termasuk beberapa soal HOTS. "
             "Untuk setiap PG, pastikan tepat satu opsi A-D yang benar; kunci harus sesuai hasil perhitungan dan pembahasan. "
@@ -282,7 +282,7 @@ TEMPLATES = {
         "maxtokens": 5000,
         "title": "Kisi-kisi {materi} - Kelas {kelas}",
         "instr": (
-            "Buatkan KISI-KISI SOAL dalam bentuk tabel: No | TP/Materi | Indikator Soal | "
+            "Buatkan KISI-KISI SOAL sebanyak jumlah soal yang diminta dan gunakan bentuk soal yang dipilih guru. Tabel: No | TP/Materi | Indikator Soal | "
             "Level Kognitif (C1-C6) | Bentuk Soal | Nomor Soal. Pastikan sebaran level kognitif "
             "seimbang dan mencakup semua TP penting dari materi ini."
         ),
@@ -430,7 +430,7 @@ TEMPLATES = {
         "title": "Proposal {kegiatan}",
         "instr": (
             "Buatkan PROPOSAL KEGIATAN sekolah yang lengkap dan persuasif: latar belakang "
-            "(pakai yang ditempel guru), dasar hukum hanya jika diberikan guru; jika tidak, tulis "[Dasar hukum: diisi sesuai ketentuan sekolah]" tanpa mengarang, tujuan, sasaran peserta, "
+            "(pakai yang ditempel guru), dasar hukum hanya jika diberikan guru; jika tidak, tulis '[Dasar hukum: diisi sesuai ketentuan sekolah]' tanpa mengarang, tujuan, sasaran peserta, "
             "waktu dan tempat, susunan panitia (struktur umum), rincian anggaran (tabel "
             "komponen + estimasi biaya dalam rupiah yang wajar), jadwal kegiatan, dan penutup. "
             "Akhiri dengan lembar pengesahan."
