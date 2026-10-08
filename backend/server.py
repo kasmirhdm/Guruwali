@@ -609,6 +609,25 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._send_json(200, {"school": s, "message": msg})
             return
+        if path == "/api/school/transfer-admin":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."})
+                return
+            s = school.get_user_school(user["id"])
+            if not s:
+                self._send_json(400, {"error": "Belum tergabung."})
+                return
+            body = self._read_json()
+            try:
+                new_admin_id = int(body.get("user_id", 0))
+            except (TypeError, ValueError):
+                new_admin_id = 0
+            ok, msg = school.transfer_admin(s["id"], user["id"], new_admin_id)
+            if ok:
+                platform_admin.audit(user["id"], "transfer_school_admin", "school", s["id"], {"new_admin_id": new_admin_id})
+            self._send_json(200 if ok else 400, {"ok": ok, "message": msg})
+            return
         if path == "/api/school/remove-member":
             user = self._user()
             if not user:
