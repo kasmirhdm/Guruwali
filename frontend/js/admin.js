@@ -279,7 +279,23 @@
   };
   window.delCurriculum=function(type,id){if(!confirm("Hapus data ini? Data turunannya juga akan ikut dihapus."))return;api("POST","/api/platform-admin/curriculum/delete",{entity:type,id:id}).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menghapus.");});};
   function organizePaTabs(){
-    var d=$("platformAdminContent");if(!d||d.querySelector(".pa-tabs"))return;
+    var d=$("platformAdminContent");if(!d)return;
+    // Jika tabs sudah ada, update active state saja
+    var existing=d.querySelector(".pa-tabs");
+    if(existing){
+      var active=window._paTab||"dashboard";
+      existing.querySelectorAll(".pa-tab").forEach(function(b){
+        var isA=b.dataset.tab===active;
+        b.style.border="2px solid "+(isA?"#4f46e5":"#e2e8f0");
+        b.style.background=isA?"#4f46e5":"#fff";
+        b.style.color=isA?"#fff":"#475569";
+        b.style.fontWeight=isA?"700":"600";
+      });
+      d.querySelectorAll(".pa-panel").forEach(function(p){
+        p.style.display=(p.dataset.panel===active)?"":"none";
+      });
+      return;
+    }
     var hero=d.querySelector(".admin-hero");
     var kpis=d.querySelector(".admin-kpis");
     var cards=Array.prototype.slice.call(d.querySelectorAll(":scope > .admin-card, :scope > .admin-grid"));
