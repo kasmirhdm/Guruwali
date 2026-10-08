@@ -525,6 +525,64 @@ def build_prompt(gen_type, inputs):
     )
 
 
+def sanitize_math_output(text):
+    """Bersihkan notasi LaTeX umum agar aman dibaca di Word/PDF."""
+    if not text:
+        return text
+    text = str(text)
+
+    # Hapus pembungkus matematika LaTeX/Markdown.
+    text = re.sub(r"\\$\\$?", "", text)
+
+    # Perintah simbol yang umum.
+    symbols = {
+        r"\\times": "×", r"\\cdot": "·", r"\\div": "÷", r"\\pm": "±",
+        r"\\mp": "∓", r"\\leq": "≤", r"\\le": "≤", r"\\geq": "≥", r"\\ge": "≥",
+        r"\\neq": "≠", r"\\ne": "≠", r"\\approx": "≈", r"\\sim": "∼",
+        r"\\infty": "∞", r"\\emptyset": "∅", r"\\varnothing": "∅",
+        r"\\in": "∈", r"\\notin": "∉", r"\\subseteq": "⊆", r"\\subset": "⊂",
+        r"\\supseteq": "⊇", r"\\supset": "⊃", r"\\cup": "∪", r"\\cap": "∩",
+        r"\\rightarrow": "→", r"\\to": "→", r"\\leftarrow": "←", r"\\leftrightarrow": "↔",
+        r"\\angle": "∠", r"\\triangle": "△", r"\\degree": "°", r"\\sqrt": "√",
+        r"\\pi": "π", r"\\alpha": "α", r"\\beta": "β", r"\\gamma": "γ",
+        r"\\delta": "δ", r"\\theta": "θ", r"\\lambda": "λ", r"\\mu": "μ",
+        r"\\sigma": "σ", r"\\phi": "φ", r"\\omega": "ω",
+    }
+    for src, dst in symbols.items():
+        text = re.sub(src, dst, text)
+
+    # Pecahan sederhana: \\frac{a}{b} -> a/b. Ulangi untuk pecahan bertingkat sederhana.
+    frac_pat = re.compile(r"\\\\frac\\s*\\{([^{}]*)\\}\\s*\\{([^{}]*)\\}")
+    for _ in range(3):
+        new = frac_pat.sub(lambda m: f"({m.group(1)})/({m.group(2)})", text)
+        if new == text:
+            break
+        text = new
+
+    # Akar sederhana: \\sqrt{x} -> √x, dengan tanda kurung bila ekspresi lebih dari satu karakter.
+    text = re.sub(r"√\\s*\\{([^{}]*)\\}", lambda m: "√(" + m.group(1) + ")", text)
+
+    # Pangkat/subskrip LaTeX sederhana: x^{2} -> x², x_{1} -> x₁.
+    supers = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","+":"⁺","-":"⁻","=":"⁼","(":"⁽",")":"⁾"}
+    subs = {"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","+":"₊","-":"₋","=":"₌","(":"₍",")":"₎"}
+    def _power(m):
+        val = m.group(1)
+        return "".join(supers.get(c, "^" + c) for c in val)
+    def _sub(m):
+        val = m.group(1)
+        return "".join(subs.get(c, "_" + c) for c in val)
+    text = re.sub(r"\\^\\{([^{}]+)\\}", _power, text)
+    text = re.sub(r"_\\{([^{}]+)\\}", _sub, text)
+
+    # Perintah teks LaTeX sederhana: \\text{...} -> ...
+    text = re.sub(r"\\text\\s*\\{([^{}]*)\\}", r"\\1", text)
+
+    # Jangan biarkan perintah LaTeX/backslash tersisa.
+    text = re.sub(r"\\\\[A-Za-z]+", "", text)
+    text = text.replace("\\\\", "")
+    return text
+
+
 def make_title(gen_type, inputs):
     """Judul otomatis untuk dokumen tersimpan."""
     tpl = TEMPLATES.get(gen_type, {})
