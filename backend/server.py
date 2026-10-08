@@ -417,9 +417,9 @@ class Handler(BaseHTTPRequestHandler):
             user=self._user()
             if not platform_admin.is_platform_admin(user):
                 self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
-            jenjang=str(query.get("jenjang",[""])[0] or "")
-            semester=str(query.get("semester",[""])[0] or "")
-            mapel=str(query.get("mapel",[""])[0] or "")
+            jenjang=str(qs.get("jenjang",[""])[0] or "")
+            semester=str(qs.get("semester",[""])[0] or "")
+            mapel=str(qs.get("mapel",[""])[0] or "")
             conn=db.get_conn()
             try:
                 subjects=conn.execute("SELECT * FROM curriculum_subjects WHERE (?='' OR jenjang=?) AND (?='' OR semester=?) AND (?='' OR mapel=?) ORDER BY jenjang,semester,mapel",
@@ -443,10 +443,10 @@ class Handler(BaseHTTPRequestHandler):
             user=self._user()
             if not user:
                 self._send_json(401, {"error":"Belum masuk."}); return
-            jenjang=str(query.get("jenjang",[""])[0] or "")
-            semester=str(query.get("semester",[""])[0] or "")
-            mapel=str(query.get("mapel",[""])[0] or "")
-            materi=str(query.get("materi",[""])[0] or "")
+            jenjang=str(qs.get("jenjang",[""])[0] or "")
+            semester=str(qs.get("semester",[""])[0] or "")
+            mapel=str(qs.get("mapel",[""])[0] or "")
+            materi=str(qs.get("materi",[""])[0] or "")
             conn=db.get_conn()
             try:
                 s=conn.execute("SELECT * FROM curriculum_subjects WHERE jenjang=? AND semester=? AND mapel=? LIMIT 1",(jenjang,semester,mapel)).fetchone()
