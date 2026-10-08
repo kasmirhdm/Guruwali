@@ -697,17 +697,31 @@ class Handler(BaseHTTPRequestHandler):
                         cur=conn.execute("INSERT INTO curriculum_subjects(version_id,jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?,?)",
                             (vid,str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],db.now()))
                 elif action=="material":
-                    if body.get("id"): cur=conn.execute("UPDATE curriculum_materials SET subject_id=?,nama=?,urutan=? WHERE id=?",(int(body.get("subject_id",0)),str(body.get("nama",""))[:200],int(body.get("urutan",0)),int(body.get("id"))))
+                    subject_id=int(body.get("subject_id",0))
+                    nama=str(body.get("nama","")).strip()[:200]
+                    if not subject_id or not nama or not conn.execute("SELECT 1 FROM curriculum_subjects WHERE id=?",(subject_id,)).fetchone():
+                        self._send_json(400, {"error":"Mapel induk materi tidak valid atau nama materi kosong."}); return
+                    if body.get("id"): cur=conn.execute("UPDATE curriculum_materials SET subject_id=?,nama=?,urutan=? WHERE id=?",(subject_id,nama,int(body.get("urutan",0)),int(body.get("id"))))
                     else: cur=conn.execute("INSERT INTO curriculum_materials(subject_id,nama,urutan,created_at) VALUES(?,?,?,?)",
-                        (int(body.get("subject_id",0)),str(body.get("nama",""))[:200],int(body.get("urutan",0)),db.now()))
+                        (subject_id,nama,int(body.get("urutan",0)),db.now()))
                 elif action=="cp":
-                    if body.get("id"): cur=conn.execute("UPDATE curriculum_cp SET material_id=?,kode=?,deskripsi=? WHERE id=?",(int(body.get("material_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("id"))))
+                    material_id=int(body.get("material_id",0))
+                    kode=str(body.get("kode","")).strip()[:50]
+                    deskripsi=str(body.get("deskripsi","")).strip()[:10000]
+                    if not material_id or not deskripsi or not conn.execute("SELECT 1 FROM curriculum_materials WHERE id=?",(material_id,)).fetchone():
+                        self._send_json(400, {"error":"Materi induk CP tidak valid atau deskripsi CP kosong."}); return
+                    if body.get("id"): cur=conn.execute("UPDATE curriculum_cp SET material_id=?,kode=?,deskripsi=? WHERE id=?",(material_id,kode,deskripsi,int(body.get("id"))))
                     else: cur=conn.execute("INSERT INTO curriculum_cp(material_id,kode,deskripsi,created_at) VALUES(?,?,?,?)",
-                        (int(body.get("material_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],db.now()))
+                        (material_id,kode,deskripsi,db.now()))
                 elif action=="tp":
-                    if body.get("id"): cur=conn.execute("UPDATE curriculum_tp SET cp_id=?,kode=?,deskripsi=?,urutan=? WHERE id=?",(int(body.get("cp_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("urutan",0)),int(body.get("id"))))
+                    cp_id=int(body.get("cp_id",0))
+                    kode=str(body.get("kode","")).strip()[:50]
+                    deskripsi=str(body.get("deskripsi","")).strip()[:10000]
+                    if not cp_id or not deskripsi or not conn.execute("SELECT 1 FROM curriculum_cp WHERE id=?",(cp_id,)).fetchone():
+                        self._send_json(400, {"error":"CP induk TP tidak valid atau deskripsi TP kosong."}); return
+                    if body.get("id"): cur=conn.execute("UPDATE curriculum_tp SET cp_id=?,kode=?,deskripsi=?,urutan=? WHERE id=?",(cp_id,kode,deskripsi,int(body.get("urutan",0)),int(body.get("id"))))
                     else: cur=conn.execute("INSERT INTO curriculum_tp(cp_id,kode,deskripsi,urutan,created_at) VALUES(?,?,?,?,?)",
-                        (int(body.get("cp_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("urutan",0)),db.now()))
+                        (cp_id,kode,deskripsi,int(body.get("urutan",0)),db.now()))
                 else:
                     self._send_json(400, {"error":"Jenis master tidak dikenal."}); return
                 conn.commit()
