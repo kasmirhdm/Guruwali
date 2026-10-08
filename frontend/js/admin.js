@@ -178,7 +178,7 @@
             return '<div style="background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0"><strong>📖 '+esc(m.nama)+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'material\','+m.id+')" style="margin-left:8px">Edit</button> <button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\',0,'+s.id+')" style="margin-left:8px">+ Materi</button>'+
               '<div style="margin:8px 0 0 12px">'+
               m.cp.map(function(cp){
-                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'cp\','+cp.id+')" style="margin-left:6px">Edit</button><div>'+esc(cp.deskripsi)+'</div>+
+                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'cp\','+cp.id+')" style="margin-left:6px">Edit</button><div>'+esc(cp.deskripsi)+'</div>'+
                   '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'tp\',0,'+cp.id+')" style="margin-top:5px">+ TP</button>'+
                   '<div style="margin-left:12px">'+cp.tp.map(function(tp){return '<div style="padding:5px 0;font-size:13px">🎯 '+(tp.kode?'<b>'+esc(tp.kode)+'</b> ':'')+esc(tp.deskripsi)+' <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'tp\','+tp.id+')" style="margin-left:5px">Edit</button> <button onclick="delCurriculum(\'tp\','+tp.id+')" style="border:0;background:none;color:#ef4444;cursor:pointer">Hapus</button></div>';}).join("")+'</div>'+
                   '</div>';
