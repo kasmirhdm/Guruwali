@@ -568,16 +568,20 @@ class Handler(BaseHTTPRequestHandler):
             conn=db.get_conn()
             try:
                 if action=="subject":
-                    cur=conn.execute("INSERT INTO curriculum_subjects(jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?)",
+                    if body.get("id"): cur=conn.execute("UPDATE curriculum_subjects SET jenjang=?,fase=?,semester=?,mapel=? WHERE id=?",(str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],int(body.get("id"))))
+                    else: cur=conn.execute("INSERT INTO curriculum_subjects(jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?)",
                         (str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],db.now()))
                 elif action=="material":
-                    cur=conn.execute("INSERT INTO curriculum_materials(subject_id,nama,urutan,created_at) VALUES(?,?,?,?)",
+                    if body.get("id"): cur=conn.execute("UPDATE curriculum_materials SET subject_id=?,nama=?,urutan=? WHERE id=?",(int(body.get("subject_id",0)),str(body.get("nama",""))[:200],int(body.get("urutan",0)),int(body.get("id"))))
+                    else: cur=conn.execute("INSERT INTO curriculum_materials(subject_id,nama,urutan,created_at) VALUES(?,?,?,?)",
                         (int(body.get("subject_id",0)),str(body.get("nama",""))[:200],int(body.get("urutan",0)),db.now()))
                 elif action=="cp":
-                    cur=conn.execute("INSERT INTO curriculum_cp(material_id,kode,deskripsi,created_at) VALUES(?,?,?,?)",
+                    if body.get("id"): cur=conn.execute("UPDATE curriculum_cp SET material_id=?,kode=?,deskripsi=? WHERE id=?",(int(body.get("material_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("id"))))
+                    else: cur=conn.execute("INSERT INTO curriculum_cp(material_id,kode,deskripsi,created_at) VALUES(?,?,?,?)",
                         (int(body.get("material_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],db.now()))
                 elif action=="tp":
-                    cur=conn.execute("INSERT INTO curriculum_tp(cp_id,kode,deskripsi,urutan,created_at) VALUES(?,?,?,?,?)",
+                    if body.get("id"): cur=conn.execute("UPDATE curriculum_tp SET cp_id=?,kode=?,deskripsi=?,urutan=? WHERE id=?",(int(body.get("cp_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("urutan",0)),int(body.get("id"))))
+                    else: cur=conn.execute("INSERT INTO curriculum_tp(cp_id,kode,deskripsi,urutan,created_at) VALUES(?,?,?,?,?)",
                         (int(body.get("cp_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("urutan",0)),db.now()))
                 else:
                     self._send_json(400, {"error":"Jenis master tidak dikenal."}); return
