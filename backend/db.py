@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS documents (
     type TEXT NOT NULL,
     title TEXT NOT NULL,
     content TEXT DEFAULT '',
+    curriculum_version_id INTEGER,
+    curriculum_snapshot TEXT DEFAULT '',
     is_favorite INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
@@ -89,15 +91,24 @@ CREATE TABLE IF NOT EXISTS dapodik_imports (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_dapodik_imports_user ON dapodik_imports(user_id);
-CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);\nCREATE TABLE IF NOT EXISTS curriculum_subjects (
+CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);\nCREATE TABLE IF NOT EXISTS curriculum_versions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama TEXT NOT NULL,
+    tahun_ajaran TEXT DEFAULT '',
+    aktif INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS curriculum_subjects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    version_id INTEGER DEFAULT 1,
     jenjang TEXT NOT NULL,
     fase TEXT DEFAULT '',
     semester TEXT NOT NULL,
     mapel TEXT NOT NULL,
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(version_id) REFERENCES curriculum_versions(id) ON DELETE CASCADE
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_curriculum_subject_unique ON curriculum_subjects(jenjang,fase,semester,mapel);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_curriculum_subject_unique ON curriculum_subjects(version_id,jenjang,fase,semester,mapel);
 CREATE TABLE IF NOT EXISTS curriculum_materials (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     subject_id INTEGER NOT NULL,
@@ -162,6 +173,27 @@ def init_db():
         for name, definition in migrations.items():
             if name not in existing:
                 conn.execute(f"ALTER TABLE users ADD COLUMN {name} {definition}")
+        # Migrasi Master Kurikulum versi.
+        cur_cols = {row["name"] for row in conn.execute("PRAGMA table_info(curriculum_subjects)").fetchall()}
+        if "version_id" not in cur_cols:
+            conn.execute("ALTER TABLE curriculum_subjects ADD COLUMN version_id INTEGER DEFAULT 1")
+        doc_cols = {row["name"] for row in conn.execute("PRAGMA table_info(documents)").fetchall()}
+        if "curriculum_version_id" not in doc_cols:
+            conn.execute("ALTER TABLE documents ADD COLUMN curriculum_version_id INTEGER")
+        if "curriculum_snapshot" not in doc_cols:
+            conn.execute("ALTER TABLE documents ADD COLUMN curriculum_snapshot TEXT DEFAULT ''")
+        conn.execute("DROP INDEX IF EXISTS idx_curriculum_subject_unique")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_curriculum_subject_unique ON curriculum_subjects(version_id,jenjang,fase,semester,mapel)")
+        versions = conn.execute("SELECT id FROM curriculum_versions ORDER BY id LIMIT 1").fetchone()
+        if not versions:
+            conn.execute("INSERT INTO curriculum_versions(nama,tahun_ajaran,aktif,created_at) VALUES(?,?,?,?)",
+                         ("Kurikulum Merdeka 2026/2027", "2026/2027", 1, now()))
+            version_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        else:
+            version_id = versions["id"]
+            if not conn.execute("SELECT 1 FROM curriculum_versions WHERE aktif=1 LIMIT 1").fetchone():
+                conn.execute("UPDATE curriculum_versions SET aktif=CASE WHEN id=? THEN 1 ELSE 0 END", (version_id,))
+        conn.execute("UPDATE curriculum_subjects SET version_id=? WHERE version_id IS NULL OR version_id=0", (version_id,))
         school_cols = {row["name"] for row in conn.execute("PRAGMA table_info(schools)").fetchall()}
         school_migrations = {
             "telp": "TEXT DEFAULT ''", "email": "TEXT DEFAULT ''", "invite_code": "TEXT DEFAULT ''",
