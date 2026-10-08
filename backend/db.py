@@ -133,6 +133,7 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 def init_db():
