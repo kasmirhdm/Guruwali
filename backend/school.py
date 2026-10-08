@@ -226,7 +226,7 @@ def consume_quota(user_id, amount=1):
             return None
         cur = conn.execute(
             "UPDATE users SET quota_used=quota_used+? "
-            "WHERE id=? AND (is_pro=1 OR quota_used+? <= quota_limit)",
+            "WHERE id=? AND quota_used+? <= quota_limit",
             (amount, user_id, amount),
         )
         if cur.rowcount == 1:
