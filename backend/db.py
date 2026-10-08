@@ -127,7 +127,9 @@ def init_db():
         school_cols = {row["name"] for row in conn.execute("PRAGMA table_info(schools)").fetchall()}
         school_migrations = {
             "telp": "TEXT DEFAULT ''", "email": "TEXT DEFAULT ''", "invite_code": "TEXT DEFAULT ''",
-            "quota_used": "INTEGER DEFAULT 0", "quota_limit": "INTEGER DEFAULT 1000", "is_pro": "INTEGER DEFAULT 0"
+            "quota_used": "INTEGER DEFAULT 0", "quota_limit": "INTEGER DEFAULT 1000", "is_pro": "INTEGER DEFAULT 0",
+            "nama_kepala": "TEXT DEFAULT ''", "nip_kepala": "TEXT DEFAULT ''",
+            "kop_judul": "TEXT DEFAULT ''", "kop_subjudul": "TEXT DEFAULT ''", "kop_website": "TEXT DEFAULT ''"
         }
         for name, definition in school_migrations.items():
             if name not in school_cols:
