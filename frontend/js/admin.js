@@ -110,7 +110,10 @@
         '<select id="curVersion" style="padding:9px;border:1px solid #ddd;border-radius:8px;min-width:220px">'+versions.map(function(v){return '<option value="'+v.id+'" '+(v.aktif?'selected':'')+'>'+esc(v.nama)+(v.aktif?' • AKTIF':'')+'</option>';}).join('')+'</select>'+
         '<button class="btn btn-ghost btn-small" id="activateVersionBtn">Aktifkan Versi</button>'+
         '<button class="btn btn-ghost btn-small" id="cloneVersionBtn">Salin Versi</button>'+
-        '<button class="btn btn-ghost btn-small" id="newVersionBtn">+ Versi Baru</button></div>'+
+        '<button class="btn btn-ghost btn-small" id="newVersionBtn">+ Versi Baru</button>'+
+        '<button class="btn btn-ghost btn-small" id="exportCurriculumBtn">↓ Backup</button>'+
+        '<button class="btn btn-ghost btn-small" id="importCurriculumBtn">↑ Restore</button>'+
+        '<input id="curriculumImportFile" type="file" accept=".json,application/json" style="display:none"></div>'+
         '<div style="display:flex;justify-content:flex-end;margin:14px 0"><button class="btn btn-primary" id="addSubjectBtn">+ Tambah Kurikulum Mapel</button></div>'+
         '<div id="curriculumTree" style="margin-top:18px"><p class="admin-muted">Memuat...</p></div></div>';
       loadCurriculum();
@@ -118,10 +121,26 @@
       $("activateVersionBtn").onclick=function(){var id=Number($("curVersion").value||0);if(!id)return;api("POST","/api/platform-admin/curriculum/save",{action:"activate-version",id:id}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal mengaktifkan versi.");});};
       $("cloneVersionBtn").onclick=function(){var src=Number($("curVersion").value||0);if(src)curriculumVersionModal("clone",src);};
       $("newVersionBtn").onclick=function(){curriculumVersionModal("new",0);};
-      $("addSubjectBtn").onclick=function(){
-        var b={action:"subject",version_id:Number($("curVersion").value||0),jenjang:$("curJenjang").value.trim(),fase:$("curFase").value.trim(),semester:$("curSemester").value,mapel:$("curMapel").value.trim()};
-        if(!b.jenjang||!b.mapel){alert("Jenjang dan mata pelajaran wajib diisi.");return;}
-        api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200){$("curJenjang").value="";$("curFase").value="";$("curMapel").value="";loadCurriculum();}else alert(r.data.error||"Gagal menyimpan.");});
+      $("addSubjectBtn").onclick=function(){curriculumModal("subject",Number($("curVersion").value||0),null);};
+      $("exportCurriculumBtn").onclick=function(){
+        var id=Number($("curVersion").value||0);if(!id)return;
+        window.location.href="/api/platform-admin/curriculum/export?version_id="+encodeURIComponent(id);
+      };
+      $("importCurriculumBtn").onclick=function(){$("curriculumImportFile").click();};
+      $("curriculumImportFile").onchange=function(){
+        var file=this.files&&this.files[0];if(!file)return;
+        if(!confirm("Restore akan membuat versi kurikulum baru dari file backup. Lanjutkan?")){this.value="";return;}
+        var rd=new FileReader();
+        rd.onload=function(){
+          try{
+            var payload=JSON.parse(rd.result);
+            api("POST","/api/platform-admin/curriculum/import",payload).then(function(r){
+              if(r.status===200){alert("Backup berhasil dipulihkan.");loadPlatform();}
+              else alert(r.data.error||"Gagal memulihkan backup.");
+            });
+          }catch(e){alert("File backup tidak valid.");}
+        };
+        rd.readAsText(file);this.value="";
       };
       d.querySelectorAll(".toggle-user-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/user-pro",{user_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
       d.querySelectorAll(".toggle-school-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/school-pro",{school_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
