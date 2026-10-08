@@ -909,7 +909,9 @@ class Handler(BaseHTTPRequestHandler):
             params = {}
         # batasi ukuran params agar tidak disalahgunakan
         params = {str(k)[:40]: str(v)[:(12000 if str(k) == "soal" and gen_type in ("kunci-jawaban", "pembahasan") else 4000)] for k, v in list(params.items())[:30]}
-        # Master Kurikulum: CP/TP resmi platform menjadi sumber utama jika tersedia.
+        # Master Kurikulum: ambil dari versi aktif dan simpan snapshot pada dokumen.
+        curriculum_version_id = None
+        curriculum_snapshot = ""
         try:
             jenjang=str(params.get("jenjang","")).strip()
             semester=str(params.get("semester","")).strip()
@@ -918,7 +920,10 @@ class Handler(BaseHTTPRequestHandler):
             if jenjang and semester and mapel:
                 conn_m=db.get_conn()
                 try:
-                    srow=conn_m.execute("SELECT id FROM curriculum_subjects WHERE jenjang=? AND semester=? AND mapel=? LIMIT 1",(jenjang,semester,mapel)).fetchone()
+                    vrow=conn_m.execute("SELECT id,nama,tahun_ajaran FROM curriculum_versions WHERE aktif=1 LIMIT 1").fetchone()
+                    if vrow:
+                        curriculum_version_id=vrow["id"]
+                    srow=conn_m.execute("SELECT id FROM curriculum_subjects WHERE version_id=? AND jenjang=? AND semester=? AND mapel=? LIMIT 1",(curriculum_version_id or 0,jenjang,semester,mapel)).fetchone()
                     if srow:
                         mrow=conn_m.execute("SELECT id,nama FROM curriculum_materials WHERE subject_id=? AND (?='' OR nama=?) ORDER BY urutan,nama LIMIT 1",(srow["id"],materi,materi)).fetchone()
                         if mrow:
@@ -932,6 +937,7 @@ class Handler(BaseHTTPRequestHandler):
                                 params["cp"]="\n".join(cp_lines)
                                 params["tp"]="\n".join(tp_lines)
                                 params["master_kurikulum"]="Gunakan CP dan TP resmi Master Kurikulum GuruWali berikut; jangan mengarang atau menggantinya."
+                                curriculum_snapshot=json.dumps({"version_id":curriculum_version_id,"version":dict(vrow) if vrow else {}, "jenjang":jenjang,"semester":semester,"mapel":mapel,"materi":materi,"cp":cp_lines,"tp":tp_lines}, ensure_ascii=False)
                 finally:
                     conn_m.close()
         except Exception:
@@ -1009,9 +1015,9 @@ class Handler(BaseHTTPRequestHandler):
             if save and content:
                 title = prompts.make_title(gen_type, params)
                 cur = conn.execute(
-                    "INSERT INTO documents (user_id, type, title, content, created_at, updated_at)"
-                    " VALUES (?, ?, ?, ?, ?, ?)",
-                    (user["id"], gen_type, title, content, db.now(), db.now()),
+                    "INSERT INTO documents (user_id, type, title, content, curriculum_version_id, curriculum_snapshot, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (user["id"], gen_type, title, content, curriculum_version_id, curriculum_snapshot, db.now(), db.now()),
                 )
                 conn.commit()
                 r = conn.execute(
@@ -1189,6 +1195,8 @@ def _doc(row):
         "type": row["type"],  # konsisten: selalu "type", bukan "doc_type"
         "title": row["title"],
         "content": row["content"],
+        "curriculum_version_id": row["curriculum_version_id"] if "curriculum_version_id" in row.keys() else None,
+        "curriculum_snapshot": row["curriculum_snapshot"] if "curriculum_snapshot" in row.keys() else "",
         "is_favorite": bool(row["is_favorite"]),
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
