@@ -508,8 +508,9 @@ def build_prompt(gen_type, inputs):
         )
     if gen_type == "chat-bebas":
         extra = f"\nPertanyaan guru: {inputs.get('pesan', '')}\n"
+    instr = tpl["instr"].replace("{tahun}", tahun)
     return (
-        f"{tpl['instr'].replace("{tahun}", tahun)}\n\n"
+        f"{instr}\n\n"
         f"DATA DARI GURU:\n{data}\n{extra}\n"
         "Tulis hasil akhirnya saja dalam Bahasa Indonesia yang rapi. "
         "Jangan mengulang instruksi ini."
