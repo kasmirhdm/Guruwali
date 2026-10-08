@@ -461,7 +461,11 @@ class Handler(BaseHTTPRequestHandler):
             if not platform_admin.is_platform_admin(user):
                 self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
             jenjang=str(qs.get("jenjang",[""])[0] or "")
-            semester=str(qs.get("semester",[""])[0] or "")\n            if semester.startswith("1"): semester="1"\n            elif semester.startswith("2"): semester="2"\n            elif semester.lower().startswith("ganjil"): semester="1"\n            elif semester.lower().startswith("genap"): semester="2"
+            semester=str(qs.get("semester",[""])[0] or "")
+            if semester.startswith("1"): semester="1"
+            elif semester.startswith("2"): semester="2"
+            elif semester.lower().startswith("ganjil"): semester="1"
+            elif semester.lower().startswith("genap"): semester="2"
             mapel=str(qs.get("mapel",[""])[0] or "")
             version_id=int(qs.get("version_id",["0"])[0] or 0)
             conn=db.get_conn()
@@ -492,7 +496,11 @@ class Handler(BaseHTTPRequestHandler):
             if not user:
                 self._send_json(401, {"error":"Belum masuk."}); return
             jenjang=str(qs.get("jenjang",[""])[0] or "")
-            semester=str(qs.get("semester",[""])[0] or "")\n            if semester.startswith("1"): semester="1"\n            elif semester.startswith("2"): semester="2"\n            elif semester.lower().startswith("ganjil"): semester="1"\n            elif semester.lower().startswith("genap"): semester="2"
+            semester=str(qs.get("semester",[""])[0] or "")
+            if semester.startswith("1"): semester="1"
+            elif semester.startswith("2"): semester="2"
+            elif semester.lower().startswith("ganjil"): semester="1"
+            elif semester.lower().startswith("genap"): semester="2"
             mapel=str(qs.get("mapel",[""])[0] or "")
             materi=str(qs.get("materi",[""])[0] or "")
             version_id=int(qs.get("version_id",["0"])[0] or 0)
