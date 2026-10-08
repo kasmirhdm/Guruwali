@@ -144,6 +144,7 @@
       };
       d.querySelectorAll(".toggle-user-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/user-pro",{user_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
       d.querySelectorAll(".toggle-school-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/school-pro",{school_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
+      organizePaTabs();
     });
   }
   function curriculumVersionModal(mode,sourceId){
@@ -277,6 +278,48 @@
     });
   };
   window.delCurriculum=function(type,id){if(!confirm("Hapus data ini? Data turunannya juga akan ikut dihapus."))return;api("POST","/api/platform-admin/curriculum/delete",{entity:type,id:id}).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menghapus.");});};
+  function organizePaTabs(){
+    var d=$("platformAdminContent");if(!d||d.querySelector(".pa-tabs"))return;
+    var hero=d.querySelector(".admin-hero");
+    var kpis=d.querySelector(".admin-kpis");
+    var cards=Array.prototype.slice.call(d.querySelectorAll(":scope > .admin-card, :scope > .admin-grid"));
+    if(!cards.length)return;
+    // Buat tab bar
+    var tabs=document.createElement("div");
+    tabs.className="pa-tabs";
+    tabs.style.cssText="display:flex;gap:8px;margin:18px 0;flex-wrap:wrap;position:sticky;top:0;background:#fff;padding:12px 0;z-index:10;border-bottom:2px solid #e2e8f0";
+    var tabDefs=[["dashboard","Dashboard"],["pengguna","Pengguna"],["sekolah","Sekolah"],["aktivitas","Aktivitas Admin"],["kurikulum","Master Kurikulum"]];
+    var active=window._paTab||"dashboard";
+    // Kelompokkan cards
+    var groups={dashboard:[],pengguna:[],sekolah:[],aktivitas:[],kurikulum:[]};
+    if(kpis)groups.dashboard.push(kpis);
+    cards.forEach(function(el){
+      var h=el.querySelector("h3");var t=h?h.textContent:"";
+      if(t.indexOf("Pengguna")>=0)groups.pengguna.push(el);
+      else if(t.indexOf("Sekolah")>=0)groups.sekolah.push(el);
+      else if(t.indexOf("Aktivitas")>=0)groups.aktivitas.push(el);
+      else if(t.indexOf("Kurikulum")>=0||t.indexOf("Master")>=0)groups.kurikulum.push(el);
+      else groups.dashboard.push(el);
+    });
+    // Buat panels
+    tabDefs.forEach(function(td){
+      var key=td[0],label=td[1];
+      var btn=document.createElement("button");
+      btn.className="pa-tab";btn.dataset.tab=key;btn.textContent=label;
+      var isA=active===key;
+      btn.style.cssText="padding:10px 18px;border-radius:10px;border:2px solid "+(isA?"#4f46e5":"#e2e8f0")+";background:"+(isA?"#4f46e5":"#fff")+";color:"+(isA?"#fff":"#475569")+";font-weight:"+(isA?"700":"600")+";cursor:pointer;font-size:14px";
+      btn.onclick=function(){window._paTab=key;organizePaTabs();};
+      tabs.appendChild(btn);
+      var panel=document.createElement("div");
+      panel.className="pa-panel";panel.dataset.panel=key;
+      panel.style.display=isA?"":"none";
+      groups[key].forEach(function(el){panel.appendChild(el);});
+      d.appendChild(panel);
+    });
+    // Sisipkan tabs setelah hero
+    if(hero&&hero.nextSibling)d.insertBefore(tabs,hero.nextSibling);
+    else d.insertBefore(tabs,d.firstChild);
+  }
   function init(){
     var p=$("navPlatformAdmin"),s=$("navSchoolAdmin");
     if(p)p.addEventListener("click",function(){setTimeout(loadPlatform,0);});
