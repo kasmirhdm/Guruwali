@@ -561,6 +561,48 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(401, {"error": "Belum masuk."})
             return
 
+        if path == "/api/platform-admin/curriculum/save":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            action=str(body.get("action",""))
+            conn=db.get_conn()
+            try:
+                if action=="subject":
+                    cur=conn.execute("INSERT INTO curriculum_subjects(jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?)",
+                        (str(body.get("jenjang",""))[:30],str(body.get("fase",""))[:10],str(body.get("semester",""))[:30],str(body.get("mapel",""))[:120],db.now()))
+                elif action=="material":
+                    cur=conn.execute("INSERT INTO curriculum_materials(subject_id,nama,urutan,created_at) VALUES(?,?,?,?)",
+                        (int(body.get("subject_id",0)),str(body.get("nama",""))[:200],int(body.get("urutan",0)),db.now()))
+                elif action=="cp":
+                    cur=conn.execute("INSERT INTO curriculum_cp(material_id,kode,deskripsi,created_at) VALUES(?,?,?,?)",
+                        (int(body.get("material_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],db.now()))
+                elif action=="tp":
+                    cur=conn.execute("INSERT INTO curriculum_tp(cp_id,kode,deskripsi,urutan,created_at) VALUES(?,?,?,?,?)",
+                        (int(body.get("cp_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("urutan",0)),db.now()))
+                else:
+                    self._send_json(400, {"error":"Jenis master tidak dikenal."}); return
+                conn.commit(); self._send_json(200, {"ok":True,"id":cur.lastrowid})
+            except Exception as e:
+                conn.rollback(); self._send_json(400, {"error":str(e)})
+            finally: conn.close()
+            return
+
+        if path == "/api/platform-admin/curriculum/delete":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            entity=str(body.get("entity","")); item_id=int(body.get("id",0))
+            tables={"subject":"curriculum_subjects","material":"curriculum_materials","cp":"curriculum_cp","tp":"curriculum_tp"}
+            table=tables.get(entity)
+            if not table:
+                self._send_json(400, {"error":"Jenis master tidak dikenal."}); return
+            conn=db.get_conn()
+            try:
+                cur=conn.execute("DELETE FROM "+table+" WHERE id=?",(item_id,)); conn.commit()
+                if cur.rowcount==0: self._send_json(404, {"error":"Data tidak ditemukan."})
+                else: self._send_json(200, {"ok":True})
+            finally: conn.close()
+            return
+
         if path == "/api/platform-admin/user-pro":
             if not platform_admin.is_platform_admin(user):
                 self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
