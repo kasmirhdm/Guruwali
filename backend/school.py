@@ -14,8 +14,8 @@ def create_school(admin_user_id, nama, npsn="", alamat="", kota="", telp="", ema
     try:
         cur = conn.execute(
             "INSERT INTO schools (nama, npsn, alamat, kota, telp, email, admin_user_id, quota_limit, created_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (nama, npsn, alamat, kota, telp, email, admin_user_id, now()),
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (nama, npsn, alamat, kota, telp, email, admin_user_id, 1000, now()),
         )
         school_id = cur.lastrowid
         conn.execute(
@@ -88,13 +88,14 @@ def join_school(user_id, invite_code):
         if not row:
             return None, "Kode undangan tidak valid."
         school_id = row["id"]
-        # Cek sudah jadi anggota?
-        existing = conn.execute(
-            "SELECT 1 FROM school_members WHERE school_id = ? AND user_id = ?",
-            (school_id, user_id),
+        # Satu akun hanya boleh aktif pada satu sekolah.
+        current = conn.execute(
+            "SELECT school_id FROM users WHERE id = ?", (user_id,)
         ).fetchone()
-        if existing:
-            return get_school(school_id), "Sudah menjadi anggota."
+        if current and current["school_id"]:
+            if int(current["school_id"]) == int(school_id):
+                return get_school(school_id), "Sudah menjadi anggota."
+            return None, "Akun sudah tergabung di sekolah lain. Keluar dari sekolah lama terlebih dahulu."
         conn.execute(
             "INSERT INTO school_members (school_id, user_id, role, joined_at) VALUES (?, ?, 'guru', ?)",
             (school_id, user_id, now()),
@@ -134,7 +135,11 @@ def remove_member(school_id, admin_id, target_user_id):
             "DELETE FROM school_members WHERE school_id = ? AND user_id = ?",
             (school_id, target_user_id),
         )
-        conn.execute("UPDATE users SET school_id = NULL WHERE id = ?", (target_user_id,))
+        # Hanya kosongkan users.school_id jika sekolah yang dihapus memang sekolah aktifnya.
+        conn.execute(
+            "UPDATE users SET school_id = NULL WHERE id = ? AND school_id = ?",
+            (target_user_id, school_id),
+        )
         conn.commit()
         return True, "Anggota dikeluarkan."
     finally:
