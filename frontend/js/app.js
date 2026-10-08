@@ -332,22 +332,24 @@
                           "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"];
   function signatureParams() {
     if (!state.user) return {};
+    var school = (window.GWSchool && window.GWSchool.data && window.GWSchool.data.school) || null;
+    // Jika guru tergabung sekolah, identitas kop selalu berasal dari data sekolah resmi.
     return {
-      npsn: state.user.npsn || "",
-      sekolah: state.user.sekolah || "",
-      alamat_sekolah: state.user.alamat_sekolah || "",
-      kota_sekolah: state.user.kota_sekolah || "",
-      nama_kepala: state.user.nama_kepala || "",
-      nip_kepala: state.user.nip_kepala || "",
+      npsn: school ? (school.npsn || "") : (state.user.npsn || ""),
+      sekolah: school ? (school.nama || "") : (state.user.sekolah || ""),
+      alamat_sekolah: school ? (school.alamat || "") : (state.user.alamat_sekolah || ""),
+      kota_sekolah: school ? (school.kota || "") : (state.user.kota_sekolah || ""),
+      nama_kepala: school ? (school.nama_kepala || "") : (state.user.nama_kepala || ""),
+      nip_kepala: school ? (school.nip_kepala || "") : (state.user.nip_kepala || ""),
       jabatan_guru: state.user.jabatan_guru || "Guru",
       nip_guru: state.user.nip_guru || "",
       signature_mode: state.user.signature_mode || "guru-kepala",
       kop_mode: state.user.kop_mode || "admin",
-      kop_judul: state.user.kop_judul || "",
-      kop_subjudul: state.user.kop_subjudul || "",
-      kop_telp: state.user.kop_telp || "",
-      kop_email: state.user.kop_email || "",
-      kop_website: state.user.kop_website || ""
+      kop_judul: school ? (school.kop_judul || "") : (state.user.kop_judul || ""),
+      kop_subjudul: school ? (school.kop_subjudul || "") : (state.user.kop_subjudul || ""),
+      kop_telp: school ? (school.telp || "") : (state.user.kop_telp || ""),
+      kop_email: school ? (school.email || "") : (state.user.kop_email || ""),
+      kop_website: school ? (school.kop_website || "") : (state.user.kop_website || "")
     };
   }
 
