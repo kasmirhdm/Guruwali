@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+import sqlite3
 import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -630,7 +631,21 @@ class Handler(BaseHTTPRequestHandler):
                         (int(body.get("cp_id",0)),str(body.get("kode",""))[:50],str(body.get("deskripsi",""))[:10000],int(body.get("urutan",0)),db.now()))
                 else:
                     self._send_json(400, {"error":"Jenis master tidak dikenal."}); return
-                conn.commit(); self._send_json(200, {"ok":True,"id":cur.lastrowid})
+                conn.commit()
+                try:
+                    platform_admin.audit(user["id"], "save_curriculum_"+action, "curriculum_"+action, cur.lastrowid, {
+                        "version_id": body.get("version_id"),
+                        "parent_id": body.get("subject_id") or body.get("material_id") or body.get("cp_id")
+                    })
+                except Exception:
+                    pass
+                self._send_json(200, {"ok":True,"id":cur.lastrowid})
+            except sqlite3.IntegrityError as e:
+                conn.rollback()
+                msg=str(e)
+                if "idx_curriculum_subject_unique" in msg or "UNIQUE constraint failed: curriculum_subjects" in msg:
+                    msg="Mapel dengan jenjang, fase, semester, dan nama yang sama sudah ada pada versi ini."
+                self._send_json(400, {"error":msg})
             except Exception as e:
                 conn.rollback(); self._send_json(400, {"error":str(e)})
             finally: conn.close()
@@ -683,9 +698,17 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error":"Jenis master tidak dikenal."}); return
             conn=db.get_conn()
             try:
-                cur=conn.execute("DELETE FROM "+table+" WHERE id=?",(item_id,)); conn.commit()
-                if cur.rowcount==0: self._send_json(404, {"error":"Data tidak ditemukan."})
-                else: self._send_json(200, {"ok":True})
+                cur=conn.execute("DELETE FROM "+table+" WHERE id=?",(item_id,))
+                if cur.rowcount==0:
+                    conn.rollback()
+                    self._send_json(404, {"error":"Data tidak ditemukan."})
+                    return
+                conn.commit()
+                try:
+                    platform_admin.audit(user["id"], "delete_curriculum_"+entity, "curriculum_"+entity, item_id, {})
+                except Exception:
+                    pass
+                self._send_json(200, {"ok":True})
             finally: conn.close()
             return
 
