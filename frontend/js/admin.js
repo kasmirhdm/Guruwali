@@ -104,33 +104,60 @@
       '</tbody></table></div></div></div><div class="admin-card"><h3>Aktivitas Admin</h3><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Waktu</th><th>Admin</th><th>Aksi</th><th>Target</th></tr></thead><tbody>'+
       logs.map(function(l){return'<tr><td>'+new Date(l.created_at*1000).toLocaleString("id-ID")+'</td><td>'+esc(l.actor_name||l.actor_email||"—")+'</td><td>'+esc(l.action)+'</td><td>'+esc(l.target_type||"")+' #'+(l.target_id||"")+'</td></tr>';}).join("")+
       '</tbody></table></div></div>';
-      // Master Data CP/TP
-      d.innerHTML+='<div class="admin-grid"><div class="admin-card"><h3>📚 Master CP (Capaian Pembelajaran)</h3><div id="masterCpList"><p class="admin-muted">Memuat...</p></div><h4 style="margin:16px 0 8px">Tambah CP</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="cpJenjang" placeholder="Jenjang (SD/SMP/SMA)" style="padding:8px;border:1px solid #ddd;border-radius:8px"><input id="cpFase" placeholder="Fase (A/B/C/D/E/F)" style="padding:8px;border:1px solid #ddd;border-radius:8px"><input id="cpMapel" placeholder="Mata Pelajaran" style="padding:8px;border:1px solid #ddd;border-radius:8px"><input id="cpKode" placeholder="Kode (opsional)" style="padding:8px;border:1px solid #ddd;border-radius:8px"></div><textarea id="cpDeskripsi" placeholder="Deskripsi CP..." style="width:100%;padding:8px;margin-top:8px;border:1px solid #ddd;border-radius:8px;min-height:60px"></textarea><button class="btn btn-primary" id="addCpBtn" style="margin-top:8px">+ Tambah CP</button></div><div class="admin-card"><h3>🎯 Master TP (Tujuan Pembelajaran)</h3><div id="masterTpList"><p class="admin-muted">Memuat...</p></div><h4 style="margin:16px 0 8px">Tambah TP</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="tpJenjang" placeholder="Jenjang" style="padding:8px;border:1px solid #ddd;border-radius:8px"><input id="tpFase" placeholder="Fase" style="padding:8px;border:1px solid #ddd;border-radius:8px"><input id="tpMapel" placeholder="Mapel" style="padding:8px;border:1px solid #ddd;border-radius:8px"><input id="tpKelas" placeholder="Kelas" style="padding:8px;border:1px solid #ddd;border-radius:8px"></div><textarea id="tpDeskripsi" placeholder="Deskripsi TP..." style="width:100%;padding:8px;margin-top:8px;border:1px solid #ddd;border-radius:8px;min-height:60px"></textarea><button class="btn btn-primary" id="addTpBtn" style="margin-top:8px">+ Tambah TP</button></div></div>';
-      loadMasterCp(); loadMasterTp();
-      $("addCpBtn").onclick=function(){var b={jenjang:$("cpJenjang").value,fase:$("cpFase").value,mapel:$("cpMapel").value,kode:$("cpKode").value,deskripsi:$("cpDeskripsi").value};if(!b.jenjang||!b.mapel||!b.deskripsi){alert("Lengkapi jenjang, mapel, dan deskripsi!");return;}api("POST","/api/platform-admin/master-cp/add",b).then(function(){loadMasterCp();$("cpJenjang").value="";$("cpFase").value="";$("cpMapel").value="";$("cpKode").value="";$("cpDeskripsi").value="";});};
-      $("addTpBtn").onclick=function(){var b={jenjang:$("tpJenjang").value,fase:$("tpFase").value,mapel:$("tpMapel").value,kelas:$("tpKelas").value,deskripsi:$("tpDeskripsi").value};if(!b.jenjang||!b.mapel||!b.deskripsi){alert("Lengkapi jenjang, mapel, dan deskripsi!");return;}api("POST","/api/platform-admin/master-tp/add",b).then(function(){loadMasterTp();$("tpJenjang").value="";$("tpFase").value="";$("tpMapel").value="";$("tpKelas").value="";$("tpDeskripsi").value="";});};
+      // Master Kurikulum: Jenjang -> Semester -> Mapel -> Materi -> CP -> TP
+      d.innerHTML+='<div class="admin-card"><h3>📚 Master Kurikulum</h3><p class="admin-muted">Kelola CP dan TP resmi yang akan menjadi sumber GuruWali untuk guru.</p>'+
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0">'+
+        '<input id="curJenjang" placeholder="Jenjang: SMP" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
+        '<input id="curFase" placeholder="Fase: D" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
+        '<select id="curSemester" style="padding:9px;border:1px solid #ddd;border-radius:8px"><option>Ganjil</option><option>Genap</option></select>'+
+        '<input id="curMapel" placeholder="Mata Pelajaran" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
+        '</div><button class="btn btn-primary" id="addSubjectBtn">+ Tambah Kurikulum Mapel</button>'+
+        '<div id="curriculumTree" style="margin-top:18px"><p class="admin-muted">Memuat...</p></div></div>';
+      loadCurriculum();
+      $("addSubjectBtn").onclick=function(){
+        var b={action:"subject",jenjang:$("curJenjang").value.trim(),fase:$("curFase").value.trim(),semester:$("curSemester").value,mapel:$("curMapel").value.trim()};
+        if(!b.jenjang||!b.mapel){alert("Jenjang dan mata pelajaran wajib diisi.");return;}
+        api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200){$("curJenjang").value="";$("curFase").value="";$("curMapel").value="";loadCurriculum();}else alert(r.data.error||"Gagal menyimpan.");});
+      };
       d.querySelectorAll(".toggle-user-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/user-pro",{user_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
       d.querySelectorAll(".toggle-school-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/school-pro",{school_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
     });
   }
-  function loadMasterCp(){
-    api("GET","/api/platform-admin/master-cp").then(function(r){
-      var box=$("masterCpList");if(!box)return;
-      var d=(r.data&&r.data.data)||[];
-      if(!d.length){box.innerHTML='<p class="admin-muted">Belum ada data CP.</p>';return;}
-      box.innerHTML='<div style="max-height:300px;overflow-y:auto">'+d.map(function(x){return'<div style="padding:8px;border-bottom:1px solid #eee;font-size:13px"><strong>'+esc(x.jenjang)+' - '+esc(x.fase)+' - '+esc(x.mapel)+'</strong>'+(x.kode?' <span class="admin-badge">'+esc(x.kode)+'</span>':'')+'<br><span style="color:#666">'+esc(x.deskripsi)+'</span><br><button class="btn btn-ghost btn-small" onclick="delCp('+x.id+')" style="margin-top:4px;color:#ef4444">Hapus</button></div>';}).join("")+'</div>';
+  function loadCurriculum(){
+    api("GET","/api/platform-admin/curriculum").then(function(r){
+      var box=$("curriculumTree"); if(!box)return;
+      var data=(r.data&&r.data.data)||[];
+      if(!data.length){box.innerHTML='<p class="admin-muted">Belum ada Master Kurikulum. Tambahkan jenjang, semester, dan mapel di atas.</p>';return;}
+      box.innerHTML=data.map(function(s){
+        return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">'+
+          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong>'+esc(s.jenjang)+' • '+esc(s.fase||"—")+' • '+esc(s.semester)+' • '+esc(s.mapel)+'</strong>'+
+          '<button class="btn btn-ghost btn-small" onclick="delCurriculum(\'subject\','+s.id+')" style="color:#ef4444">Hapus Mapel</button></div>'+
+          '<div style="margin-top:12px">'+
+          s.materi.map(function(m){
+            return '<div style="background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0"><strong>📖 '+esc(m.nama)+'</strong> <button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\','+m.id+','+s.id+')" style="margin-left:8px">+ Materi</button>'+
+              '<div style="margin:8px 0 0 12px">'+
+              m.cp.map(function(cp){
+                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong><div>'+esc(cp.deskripsi)+'</div>'+
+                  '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'tp\',0,'+cp.id+')" style="margin-top:5px">+ TP</button>'+
+                  '<div style="margin-left:12px">'+cp.tp.map(function(tp){return '<div style="padding:5px 0;font-size:13px">🎯 '+(tp.kode?'<b>'+esc(tp.kode)+'</b> ':'')+esc(tp.deskripsi)+' <button onclick="delCurriculum(\'tp\','+tp.id+')" style="border:0;background:none;color:#ef4444;cursor:pointer">Hapus</button></div>';}).join("")+'</div>'+
+                  '</div>';
+              }).join("")+'</div>'+
+              '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'cp\',0,'+m.id+')" style="margin-top:8px">+ CP</button></div>';
+          }).join("")+'</div>'+
+          '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\',0,'+s.id+')" style="margin-top:4px">+ Materi</button></div>';
+      }).join("");
     });
   }
-  window.delCp=function(id){if(!confirm("Hapus CP ini?"))return;api("POST","/api/platform-admin/master-cp/delete",{id:id}).then(loadMasterCp);};
-  function loadMasterTp(){
-    api("GET","/api/platform-admin/master-tp").then(function(r){
-      var box=$("masterTpList");if(!box)return;
-      var d=(r.data&&r.data.data)||[];
-      if(!d.length){box.innerHTML='<p class="admin-muted">Belum ada data TP.</p>';return;}
-      box.innerHTML='<div style="max-height:300px;overflow-y:auto">'+d.map(function(x){return'<div style="padding:8px;border-bottom:1px solid #eee;font-size:13px"><strong>'+esc(x.jenjang)+' - '+esc(x.fase)+' - '+esc(x.mapel)+(x.kelas?' ('+esc(x.kelas)+')':'')+'</strong><br><span style="color:#666">'+esc(x.deskripsi)+'</span><br><button class="btn btn-ghost btn-small" onclick="delTp('+x.id+')" style="margin-top:4px;color:#ef4444">Hapus</button></div>';}).join("")+'</div>';
-    });
-  }
-  window.delTp=function(id){if(!confirm("Hapus TP ini?"))return;api("POST","/api/platform-admin/master-tp/delete",{id:id}).then(loadMasterTp);};
+  window.addCurriculumItem=function(type,id,parent){
+    var label=type==="material"?"Nama materi":type==="cp"?"Deskripsi CP":"Deskripsi TP";
+    var value=prompt("Masukkan "+label+":"); if(!value)return;
+    var b={action:type};
+    if(type==="material"){b.subject_id=parent;b.nama=value;}
+    if(type==="cp"){b.material_id=parent;b.deskripsi=value;}
+    if(type==="tp"){b.cp_id=parent;b.deskripsi=value;}
+    api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menyimpan.");});
+  };
+  window.delCurriculum=function(type,id){if(!confirm("Hapus data ini? Data turunannya juga akan ikut dihapus."))return;api("POST","/api/platform-admin/curriculum/delete",{entity:type,id:id}).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menghapus.");});};
   function init(){
     var p=$("navPlatformAdmin"),s=$("navSchoolAdmin");
     if(p)p.addEventListener("click",function(){setTimeout(loadPlatform,0);});
