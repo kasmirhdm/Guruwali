@@ -9,6 +9,8 @@ const GWSchool = {
       const d = await r.json();
       this.data = d.school ? d : null;
       this.render();
+      // Setelah data sekolah tersedia, evaluasi ulang panel Dapodik.
+      if (window.GWDapodik && window.gwUser) window.GWDapodik.show();
     } catch(e) { /* silent */ }
   },
 
@@ -18,44 +20,11 @@ const GWSchool = {
   },
 
   render() {
+    // Tampilan manajemen sekolah utama berada di menu "Admin Sekolah"
+    // (frontend/js/admin.js). Di sini hanya dipertahankan sebagai store data
+    // agar signatureParams(), Dapodik, dan komponen lain mendapat data terbaru.
     if (!window.gwUser) { this.hide(); return; }
-    let el = document.getElementById('gw-school-section');
-    if (!el) {
-      // Buat section di menu
-      const nav = document.querySelector('nav, .menu, header');
-      el = document.createElement('div');
-      el.id = 'gw-school-section';
-      el.style.cssText = 'padding:16px;margin:16px 0;border:1px solid #e0e0e0;border-radius:12px;background:#f9fafb;';
-      const main = document.querySelector('main') || document.body;
-      main.appendChild(el);
-    }
-    if (!this.data) {
-      el.innerHTML = `
-        <h3 style="margin:0 0 12px">🏫 Akun Sekolah</h3>
-        <p style="color:#666;font-size:14px">Gabung sekolah untuk kuota bersama, atau buat sekolah baru.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="GWSchool.showCreate()" style="padding:10px 16px;border-radius:8px;border:none;background:#2563eb;color:#fff;font-weight:600">+ Buat Sekolah</button>
-          <button onclick="GWSchool.showJoin()" style="padding:10px 16px;border-radius:8px;border:1px solid #2563eb;color:#2563eb;background:#fff;font-weight:600">Gabung via Kode</button>
-        </div>
-        <div id="gw-school-form"></div>`;
-    } else {
-      const s = this.data.school;
-      const members = this.data.members || [];
-      const isAdmin = this.data.is_admin;
-      el.innerHTML = `
-        <h3 style="margin:0 0 8px">🏫 ${this.esc(s.nama)}</h3>
-        <p style="color:#666;font-size:13px;margin:0 0 8px">NPSN: ${this.esc(s.npsn||'-')} · Kuota: ${s.quota_used||0}/${s.quota_limit||0}</p>
-        ${isAdmin ? `<button onclick="GWSchool.genCode()" style="padding:8px 14px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-weight:600;margin-bottom:8px">🔗 Buat Kode Undangan</button>
-        <div id="gw-invite-code" style="font-size:14px;margin-bottom:8px"></div>` : ''}
-        <h4 style="margin:12px 0 8px">Anggota (${members.length})</h4>
-        <div style="font-size:14px">
-          ${members.map(m => `<div style="padding:8px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-            <span>${this.esc(m.nama||m.email)} <small style="color:#888">(${this.esc(m.role)})</small></span>
-            ${isAdmin && m.role !== 'admin' ? `<span style="display:flex;gap:6px"><button onclick="GWSchool.transfer(${m.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #2563eb;color:#2563eb;background:#fff;font-size:12px">Jadikan Admin</button><button onclick="GWSchool.remove(${m.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #ef4444;color:#ef4444;background:#fff;font-size:12px">Keluarkan</button></span>` : ''}
-          </div>`).join('')}
-        </div>
-        ${!isAdmin ? `<button onclick="GWSchool.leave()" style="margin-top:12px;padding:8px 14px;border-radius:8px;border:1px solid #ef4444;color:#ef4444;background:#fff">Keluar dari Sekolah</button>` : ''}`;
-    }
+    return this.data;
   },
 
   esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; },
