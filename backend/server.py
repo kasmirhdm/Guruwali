@@ -416,6 +416,16 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        if path == "/api/platform-admin/curriculum-versions":
+            user=self._user()
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            conn=db.get_conn()
+            try:
+                rows=conn.execute("SELECT * FROM curriculum_versions ORDER BY id DESC").fetchall()
+            finally: conn.close()
+            self._send_json(200, {"versions":[dict(r) for r in rows]}); return
+
         if path == "/api/platform-admin/curriculum":
             user=self._user()
             if not platform_admin.is_platform_admin(user):
@@ -423,10 +433,15 @@ class Handler(BaseHTTPRequestHandler):
             jenjang=str(qs.get("jenjang",[""])[0] or "")
             semester=str(qs.get("semester",[""])[0] or "")
             mapel=str(qs.get("mapel",[""])[0] or "")
+            version_id=int(qs.get("version_id",["0"])[0] or 0)
             conn=db.get_conn()
             try:
-                subjects=conn.execute("SELECT * FROM curriculum_subjects WHERE (?='' OR jenjang=?) AND (?='' OR semester=?) AND (?='' OR mapel=?) ORDER BY jenjang,semester,mapel",
-                    (jenjang,jenjang,semester,semester,mapel,mapel)).fetchall()
+                if version_id:
+                    subjects=conn.execute("SELECT * FROM curriculum_subjects WHERE version_id=? AND (?='' OR jenjang=?) AND (?='' OR semester=?) AND (?='' OR mapel=?) ORDER BY jenjang,semester,mapel",
+                    (version_id,jenjang,jenjang,semester,semester,mapel,mapel)).fetchall()
+                else:
+                    subjects=conn.execute("SELECT * FROM curriculum_subjects WHERE version_id=(SELECT id FROM curriculum_versions WHERE aktif=1 LIMIT 1) AND (?='' OR jenjang=?) AND (?='' OR semester=?) AND (?='' OR mapel=?) ORDER BY jenjang,semester,mapel",
+                        (jenjang,jenjang,semester,semester,mapel,mapel)).fetchall()
                 result=[]
                 for s in subjects:
                     mats=conn.execute("SELECT * FROM curriculum_materials WHERE subject_id=? ORDER BY urutan,nama",(s["id"],)).fetchall()
@@ -450,9 +465,13 @@ class Handler(BaseHTTPRequestHandler):
             semester=str(qs.get("semester",[""])[0] or "")
             mapel=str(qs.get("mapel",[""])[0] or "")
             materi=str(qs.get("materi",[""])[0] or "")
+            version_id=int(qs.get("version_id",["0"])[0] or 0)
             conn=db.get_conn()
             try:
-                s=conn.execute("SELECT * FROM curriculum_subjects WHERE jenjang=? AND semester=? AND mapel=? LIMIT 1",(jenjang,semester,mapel)).fetchone()
+                if not version_id:
+                    vr=conn.execute("SELECT id FROM curriculum_versions WHERE aktif=1 LIMIT 1").fetchone()
+                    version_id=vr["id"] if vr else 0
+                s=conn.execute("SELECT * FROM curriculum_subjects WHERE version_id=? AND jenjang=? AND semester=? AND mapel=? LIMIT 1",(version_id,jenjang,semester,mapel)).fetchone()(jenjang,semester,mapel)).fetchone()
                 data=[]
                 if s:
                     mats=conn.execute("SELECT * FROM curriculum_materials WHERE subject_id=? AND (?='' OR nama=?) ORDER BY urutan,nama",(s["id"],materi,materi)).fetchall()
