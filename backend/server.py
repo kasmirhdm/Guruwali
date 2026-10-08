@@ -894,7 +894,7 @@ class Handler(BaseHTTPRequestHandler):
         if not user:
             self._send_json(401, {"error": "Belum masuk."})
             return
-        prompt = (body.get("prompt") or "").strip()
+        prompt = str(body.get("prompt") or "").strip()[:4000]
         if not prompt:
             self._send_json(400, {"error": "Deskripsi gambar wajib diisi."})
             return
@@ -912,7 +912,7 @@ class Handler(BaseHTTPRequestHandler):
         school_row=school.get_user_school(user["id"]) if sq else None
         # --- panggil AI image ---
         model_used = (body.get("model") or "").strip() or ai._IMAGE_MODEL
-        style = (body.get("style") or "").strip()
+        style = str(body.get("style") or "").strip()[:500]
         full_prompt = f"{prompt}. Gaya: {style}. Cocok untuk media pembelajaran Indonesia." if style else prompt
         try:
             result = ai.generate_image(full_prompt, model=model_used)
@@ -927,44 +927,61 @@ class Handler(BaseHTTPRequestHandler):
         # --- simpan hasil ---
         image_url = result.get("url")
         if result.get("b64"):
-            import base64, os, time
+            import base64, os, time, secrets
             updir = os.path.join(os.path.dirname(__file__), "uploads")
             os.makedirs(updir, exist_ok=True)
-            fname = f"img_{user['id']}_{int(time.time())}.png"
+            fname = f"img_{user['id']}_{time.time_ns()}_{secrets.token_hex(4)}.png"
             with open(os.path.join(updir, fname), "wb") as f:
                 f.write(base64.b64decode(result["b64"]))
             image_url = f"/uploads/{fname}"
         doc = None
-        conn = db.get_conn()
+        qrow = None
         try:
-            title = f"Ilustrasi: {prompt[:50]}"
-            content = f"![Ilustrasi]({image_url})\n\n*Prompt: {prompt}*"
-            cur = conn.execute(
-                "INSERT INTO documents (user_id, type, title, content, created_at, updated_at)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
-                (user["id"], "gambar-ilustrasi", title, content, db.now(), db.now()),
-            )
-            conn.commit()
-            r = conn.execute(
-                "SELECT * FROM documents WHERE id = ?", (cur.lastrowid,)
-            ).fetchone()
-            doc = _doc(r) if r else None
-            qrow = conn.execute(
-                "SELECT quota_used, quota_limit, is_pro FROM users WHERE id = ?",
-                (user["id"],),
-            ).fetchone()
-        finally:
-            conn.close()
+            conn = db.get_conn()
+            try:
+                title = f"Ilustrasi: {prompt[:50]}"
+                content = f"![Ilustrasi]({image_url})\\n\\n*Prompt: {prompt}*"
+                cur = conn.execute(
+                    "INSERT INTO documents (user_id, type, title, content, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    (user["id"], "gambar-ilustrasi", title, content, db.now(), db.now()),
+                )
+                conn.commit()
+                r = conn.execute(
+                    "SELECT * FROM documents WHERE id = ?", (cur.lastrowid,)
+                ).fetchone()
+                doc = _doc(r) if r else None
+                qrow = conn.execute(
+                    "SELECT quota_used, quota_limit, is_pro FROM users WHERE id = ?",
+                    (user["id"],),
+                ).fetchone()
+            finally:
+                conn.close()
+        except Exception as e:
+            school.refund_quota(consumed)
+            self._send_json(500, {"error": f"Gambar berhasil dibuat tetapi gagal disimpan: {e}"})
+            return
+
+        if sq:
+            current_school = school.get_user_school(user["id"])
+            quota_out = {
+                "used": current_school["quota_used"] if current_school else sq["used"] + 2,
+                "limit": sq["limit"],
+                "is_pro": True,
+                "school": True,
+            }
+        else:
+            quota_out = {
+                "used": qrow["quota_used"],
+                "limit": qrow["quota_limit"],
+                "is_pro": bool(qrow["is_pro"]),
+                "school": False,
+            }
         self._send_json(200, {
             "image_url": image_url,
             "document": doc,
             "model": model_used,
-            "quota": {
-                "used": sq["used"] if sq else qrow["quota_used"],
-                "limit": sq["limit"] if sq else qrow["quota_limit"],
-                "is_pro": True if sq else bool(qrow["is_pro"]),
-                "school": bool(sq),
-            },
+            "quota": quota_out,
         })
 
     def _api_put(self, path):
