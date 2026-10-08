@@ -619,7 +619,7 @@
   /* ---------- hasil generate ---------- */
   function dlExport(id, fmt) {
     var u = window.gwUser || (typeof state !== "undefined" ? state.user : null);
-    var isPro = u && (u.is_pro || u.school_id);
+    var isPro = u && (u.is_pro || (u.school_id && window.GWSchool && window.GWSchool.data && window.GWSchool.data.school && window.GWSchool.data.school.is_pro));
     if (!isPro) { if (confirm("Export Word/PDF hanya untuk pengguna Pro.\n\nBuka halaman Upgrade?")) location.hash = "#upgrade"; return; }
     window.location.href = "/api/documents/" + id + "/export?format=" + fmt;
   }
