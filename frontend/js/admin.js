@@ -206,25 +206,61 @@
     api("GET",url).then(function(r){
       var box=$("curriculumTree"); if(!box)return;
       var data=(r.data&&r.data.data)||[];
-      if(!data.length){box.innerHTML='<p class="admin-muted">Belum ada Master Kurikulum. Tambahkan jenjang, semester, dan mapel di atas.</p>';return;}
-      box.innerHTML=data.map(function(s){
-        return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">'+
-          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong>'+esc(s.jenjang)+' • '+esc(s.fase||"—")+' • '+esc(s.semester)+' • '+esc(s.mapel)+'</strong>'+
-          '<button class="btn btn-ghost btn-small" onclick="editCurriculum(\'subject\','+s.id+')" style="margin-right:5px">Edit</button><button class="btn btn-ghost btn-small" onclick="delCurriculum(\'subject\','+s.id+')" style="color:#ef4444">Hapus Mapel</button></div>'+
-          '<div style="margin-top:12px">'+
-          s.materi.map(function(m){
-            return '<div style="background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0"><strong>📖 '+esc(m.nama)+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'material\','+m.id+')" style="margin-left:8px">Edit</button> <button class="btn btn-ghost btn-small" onclick="delCurriculum(\'material\','+m.id+')" style="color:#ef4444;margin-left:4px">Hapus</button>'+
-              '<div style="margin:8px 0 0 12px">'+
-              m.cp.map(function(cp){
-                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'cp\','+cp.id+')" style="margin-left:6px">Edit</button> <button class="btn btn-ghost btn-small" onclick="delCurriculum(\'cp\','+cp.id+')" style="color:#ef4444;margin-left:4px">Hapus</button><div>'+esc(cp.deskripsi)+'</div>'+
-                  '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'tp\',0,'+cp.id+')" style="margin-top:5px">+ TP</button>'+
-                  '<div style="margin-left:12px">'+cp.tp.map(function(tp){return '<div style="padding:5px 0;font-size:13px">🎯 '+(tp.kode?'<b>'+esc(tp.kode)+'</b> ':'')+esc(tp.deskripsi)+' <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'tp\','+tp.id+')" style="margin-left:5px">Edit</button> <button onclick="delCurriculum(\'tp\','+tp.id+')" style="border:0;background:none;color:#ef4444;cursor:pointer">Hapus</button></div>';}).join("")+'</div>'+
-                  '</div>';
-              }).join("")+'</div>'+
-              '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'cp\',0,'+m.id+')" style="margin-top:8px">+ CP</button></div>';
-          }).join("")+'</div>'+
-          '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\',0,'+s.id+')" style="margin-top:4px">+ Materi</button></div>';
-      }).join("");
+      var stats={subject:0,material:0,cp:0,tp:0};
+      data.forEach(function(s){stats.subject++;(s.materi||[]).forEach(function(m){stats.material++;(m.cp||[]).forEach(function(cp){stats.cp++;stats.tp+=(cp.tp||[]).length;});});});
+      box.innerHTML=
+        '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px">'+
+        [['Mapel',stats.subject],['Materi',stats.material],['CP',stats.cp],['TP',stats.tp]].map(function(x){return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px"><div style="font-size:11px;color:#64748b">'+x[0]+'</div><strong style="font-size:18px">'+x[1]+'</strong></div>';}).join('')+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1.1fr .7fr .7fr;gap:8px;margin-bottom:14px">'+
+        '<input id="curSearch" placeholder="Cari mapel, materi, CP, atau TP..." style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px">'+
+        '<select id="curJenjangFilter" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px"><option value="">Semua Jenjang</option></select>'+
+        '<select id="curSemesterFilter" style="padding:10px;border:1px solid #cbd5e1;border-radius:10px"><option value="">Semua Semester</option><option value="1">Semester 1</option><option value="2">Semester 2</option></select></div>'+
+        '<div id="curResults"></div>';
+      var jf=$("curJenjangFilter"), seen={};
+      data.forEach(function(s){if(!seen[s.jenjang]){seen[s.jenjang]=1;jf.innerHTML+='<option value="'+esc(s.jenjang)+'">'+esc(s.jenjang)+'</option>';}});
+
+      function normSem(x){x=String(x||"").toLowerCase();return x==="ganjil"?"1":x==="genap"?"2":x;}
+      function hasMatch(s,m,cp,tp,q){
+        if(!q)return true;
+        q=q.toLowerCase();
+        return [s.mapel,s.jenjang,s.fase,s.semester,m.nama,cp.kode,cp.deskripsi,tp&&tp.kode,tp&&tp.deskripsi].some(function(x){return String(x||"").toLowerCase().indexOf(q)>=0;});
+      }
+      function render(){
+        var q=($("curSearch").value||"").trim(),j=$("curJenjangFilter").value,sem=$("curSemesterFilter").value;
+        var html="",shown=0;
+        data.forEach(function(s){
+          if(j&&s.jenjang!==j)return;
+          if(sem&&normSem(s.semester)!==sem)return;
+          var mats=[];
+          (s.materi||[]).forEach(function(m){
+            var cps=[];
+            (m.cp||[]).forEach(function(cp){
+              var tps=(cp.tp||[]).filter(function(tp){return hasMatch(s,m,cp,tp,q);});
+              if(hasMatch(s,m,cp,null,q)||tps.length)cps.push({cp:cp,tp:tps});
+            });
+            if(String(m.nama||"").toLowerCase().indexOf(q.toLowerCase())>=0||cps.length)mats.push({m:m,cps:cps});
+          });
+          if(q&&!mats.length)return;
+          shown++;
+          html+='<details open style="border:1px solid #e2e8f0;border-radius:12px;padding:0;margin-bottom:10px;background:#fff">'+
+            '<summary style="cursor:pointer;padding:13px 14px;font-weight:800;list-style:none">▸ '+esc(s.jenjang)+' • Fase '+esc(s.fase||"—")+' • Semester '+esc(s.semester)+' • '+esc(s.mapel)+
+            ' <span style="float:right;font-weight:500;color:#64748b;font-size:12px">'+(s.materi||[]).length+' materi</span></summary>'+
+            '<div style="padding:0 12px 12px">'+
+            '<div style="display:flex;justify-content:flex-end;margin:4px 0 8px"><button class="btn btn-ghost btn-small" onclick="editCurriculum(\'subject\','+s.id+')">Edit</button><button class="btn btn-ghost btn-small" onclick="delCurriculum(\'subject\','+s.id+')" style="color:#ef4444;margin-left:4px">Hapus Mapel</button></div>'+
+            mats.map(function(mm){var m=mm.m;return '<details open style="background:#f8fafc;border-radius:10px;margin:8px 0"><summary style="cursor:pointer;padding:10px;font-weight:700">📖 '+esc(m.nama)+' <span style="color:#64748b;font-size:12px">('+((m.cp||[]).length)+' CP)</span></summary><div style="padding:0 10px 10px">'+
+              '<div style="display:flex;gap:5px;justify-content:flex-end"><button class="btn btn-ghost btn-small" onclick="editCurriculum(\'material\','+m.id+')">Edit</button><button class="btn btn-ghost btn-small" onclick="delCurriculum(\'material\','+m.id+')" style="color:#ef4444">Hapus</button></div>'+
+              mm.cps.map(function(z){var cp=z.cp;return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><div><strong>CP '+esc(cp.kode||"")+'</strong> <span style="font-size:13px">'+esc(cp.deskripsi)+'</span> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'cp\','+cp.id+')">Edit</button><button class="btn btn-ghost btn-small" onclick="delCurriculum(\'cp\','+cp.id+')" style="color:#ef4444;margin-left:3px">Hapus</button></div>'+
+                '<div style="margin:6px 0 0 10px">'+z.tp.map(function(tp){return '<div style="padding:4px 0;font-size:13px">🎯 '+(tp.kode?'<b>'+esc(tp.kode)+'</b> ':'')+esc(tp.deskripsi)+' <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'tp\','+tp.id+')">Edit</button><button onclick="delCurriculum(\'tp\','+tp.id+')" style="border:0;background:none;color:#ef4444;cursor:pointer">Hapus</button></div>';}).join('')+
+                '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'tp\',0,'+cp.id+')" style="margin-top:5px">+ TP</button></div></div>';}).join('')+
+              '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'cp\',0,'+m.id+')" style="margin-top:7px">+ CP</button></div></details>';}).join('')+
+            '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\',0,'+s.id+')" style="margin-top:4px">+ Materi</button></div></details>';
+        });
+        $("curResults").innerHTML=html||'<p class="admin-muted" style="padding:18px;text-align:center">Tidak ada data yang cocok dengan filter.</p>';
+        var hint=document.createElement("div");hint.id="curFilterCount";hint.style.cssText="font-size:12px;color:#64748b;margin:-8px 0 10px";hint.textContent=shown+" mapel ditampilkan";$("curResults").before(hint);
+      }
+      ["curSearch","curJenjangFilter","curSemesterFilter"].forEach(function(id){$(id).addEventListener("input",render);$(id).addEventListener("change",render);});
+      render();
     });
   }
   window.addCurriculumItem=function(type,id,parent){
