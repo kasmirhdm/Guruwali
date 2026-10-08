@@ -842,6 +842,8 @@ class Handler(BaseHTTPRequestHandler):
             school.refund_quota(consumed)
             self._send_json(502, {"error": f"Gagal menghubungi AI: {e}"})
             return
+        # Normalisasi notasi matematika sebelum ditampilkan/disimpan.
+        content = prompts.sanitize_math_output(content)
         # --- simpan hasil (kuota sudah dicadangkan secara atomik) ---
         doc = None
         conn = db.get_conn()
