@@ -412,6 +412,37 @@ class Handler(BaseHTTPRequestHandler):
             self._export_document(int(m.group(1)), fmt)
             return
 
+        if path == "/api/billing/packages":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."}); return
+            conn = db.get_conn()
+            try:
+                rows = conn.execute(
+                    "SELECT id,kode,nama,harga,kredit,masa_hari,target FROM billing_packages WHERE aktif=1 ORDER BY harga"
+                ).fetchall()
+            finally:
+                conn.close()
+            self._send_json(200, {"packages": [dict(x) for x in rows]})
+            return
+
+        if path == "/api/billing/orders":
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."}); return
+            conn = db.get_conn()
+            try:
+                rows = conn.execute(
+                    """SELECT o.id,o.order_no,o.amount,o.kredit,o.target,o.status,o.payment_ref,o.paid_at,o.created_at,
+                              p.kode,p.nama
+                       FROM billing_orders o JOIN billing_packages p ON p.id=o.package_id
+                       WHERE o.user_id=? ORDER BY o.id DESC LIMIT 30""", (user["id"],)
+                ).fetchall()
+            finally:
+                conn.close()
+            self._send_json(200, {"orders": [dict(x) for x in rows]})
+            return
+
         if path == "/api/models":
             user = self._user()
             if not user:
@@ -627,6 +658,77 @@ class Handler(BaseHTTPRequestHandler):
         user = self._user()
         if not user:
             self._send_json(401, {"error": "Belum masuk."})
+            return
+
+        if path == "/api/billing/order":
+            package_id = int(body.get("package_id") or 0)
+            user = self._user()
+            if not user:
+                self._send_json(401, {"error": "Belum masuk."}); return
+            conn = db.get_conn()
+            try:
+                pkg = conn.execute(
+                    "SELECT * FROM billing_packages WHERE id=? AND aktif=1", (package_id,)
+                ).fetchone()
+                if not pkg:
+                    self._send_json(404, {"error": "Paket tidak ditemukan."}); return
+                # Paket sekolah hanya dapat dibuat oleh anggota/admin sekolah pada tahap pembayaran sekolah.
+                if pkg["target"] != "user":
+                    self._send_json(400, {"error": "Paket ini menggunakan pembayaran sekolah."}); return
+                order_no = "GW" + time.strftime("%Y%m%d%H%M%S") + ("%04d" % (int(time.time()*1000) % 10000))
+                cur = conn.execute(
+                    """INSERT INTO billing_orders(order_no,user_id,package_id,amount,kredit,target,status,created_at)
+                       VALUES(?,?,?,?,?,?,?,?)""",
+                    (order_no,user["id"],pkg["id"],pkg["harga"],pkg["kredit"],pkg["target"],"pending",db.now())
+                )
+                conn.commit()
+                self._send_json(201, {"order": {
+                    "id": cur.lastrowid, "order_no": order_no, "amount": pkg["harga"],
+                    "kredit": pkg["kredit"], "status": "pending", "package": pkg["nama"]
+                }})
+            finally:
+                conn.close()
+            return
+
+        if path == "/api/billing/webhook":
+            # Endpoint payment-gateway neutral. Gateway harus mengirim secret yang sama.
+            secret = os.environ.get("GURUWALI_PAYMENT_WEBHOOK_SECRET", "")
+            if not secret or str(body.get("secret") or "") != secret:
+                self._send_json(403, {"error": "Webhook ditolak."}); return
+            order_no = str(body.get("order_no") or "").strip()
+            status = str(body.get("status") or "").lower()
+            if status not in ("paid","settlement","success"):
+                self._send_json(200, {"ok": True, "ignored": True}); return
+            conn = db.get_conn()
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                order = conn.execute(
+                    "SELECT o.*,p.kode,p.masa_hari FROM billing_orders o JOIN billing_packages p ON p.id=o.package_id WHERE o.order_no=?",
+                    (order_no,)
+                ).fetchone()
+                if not order:
+                    conn.rollback(); self._send_json(404, {"error": "Order tidak ditemukan."}); return
+                if order["status"] == "paid":
+                    conn.commit(); self._send_json(200, {"ok": True, "already_paid": True}); return
+                cur = conn.execute(
+                    "UPDATE billing_orders SET status='paid',payment_ref=?,paid_at=? WHERE id=? AND status='pending'",
+                    (str(body.get("payment_ref") or "")[:120], db.now(), order["id"])
+                )
+                if cur.rowcount != 1:
+                    conn.rollback(); self._send_json(409, {"error": "Order sedang diproses."}); return
+                # Kredit masuk atomik dan tidak boleh melebihi limit paket.
+                u = conn.execute("SELECT quota_used,quota_limit FROM users WHERE id=?", (order["user_id"],)).fetchone()
+                if not u:
+                    conn.rollback(); self._send_json(404, {"error": "Pengguna tidak ditemukan."}); return
+                new_limit = max(int(u["quota_limit"] or 0), int(order["kredit"]))
+                conn.execute(
+                    "UPDATE users SET is_pro=1,quota_used=0,quota_limit=? WHERE id=?",
+                    (new_limit, order["user_id"])
+                )
+                conn.commit()
+                self._send_json(200, {"ok": True, "order_no": order_no, "kredit": order["kredit"], "quota_limit": new_limit})
+            finally:
+                conn.close()
             return
 
         if path == "/api/platform-admin/curriculum/import":
