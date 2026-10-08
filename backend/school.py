@@ -110,6 +110,32 @@ def join_school(user_id, invite_code):
         conn.close()
 
 
+def transfer_admin(school_id, current_admin_id, new_admin_id):
+    """Alihkan admin sekolah ke anggota lain. Admin lama tetap menjadi guru."""
+    if current_admin_id == new_admin_id:
+        return False, "Admin baru harus anggota lain."
+    if not is_school_admin(current_admin_id, school_id):
+        return False, "Hanya admin sekolah yang dapat mengalihkan admin."
+    conn = db.get_conn()
+    try:
+        member = conn.execute(
+            "SELECT role FROM school_members WHERE school_id = ? AND user_id = ?",
+            (school_id, new_admin_id),
+        ).fetchone()
+        if not member:
+            return False, "Pengguna tersebut bukan anggota sekolah."
+        conn.execute("UPDATE school_members SET role = 'guru' WHERE school_id = ? AND user_id = ?", (school_id, current_admin_id))
+        conn.execute("UPDATE school_members SET role = 'admin' WHERE school_id = ? AND user_id = ?", (school_id, new_admin_id))
+        conn.execute("UPDATE schools SET admin_user_id = ? WHERE id = ?", (new_admin_id, school_id))
+        conn.commit()
+        return True, "Admin sekolah berhasil dialihkan."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+    finally:
+        conn.close()
+
+
 def list_members(school_id):
     conn = db.get_conn()
     try:
