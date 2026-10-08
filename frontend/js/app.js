@@ -120,6 +120,15 @@
   function route() {
     var h = (location.hash || "#beranda").replace("#", "");
     if (h === "daftar") { showAuth("register"); return; }
+
+    // Admin GuruWali hanya boleh masuk ke dashboard platform admin.
+    // Jangan biarkan hash lama/default (#beranda) membuka generator guru.
+    if (state.user && state.user.is_platform_admin && h !== "platform-admin") {
+      h = "platform-admin";
+      if (location.hash !== "#platform-admin") {
+        history.replaceState(null, "", "#platform-admin");
+      }
+    }
     showSection(h);
   }
 
