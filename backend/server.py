@@ -1073,10 +1073,19 @@ class Handler(BaseHTTPRequestHandler):
                                     cp_lines.append((cp_row["kode"]+": " if cp_row["kode"] else "")+cp_row["deskripsi"])
                                     for tp_row in conn_m.execute("SELECT kode,deskripsi FROM curriculum_tp WHERE cp_id=? ORDER BY urutan,id",(cp_row["id"],)).fetchall():
                                         tp_lines.append((tp_row["kode"]+": " if tp_row["kode"] else "")+tp_row["deskripsi"])
+                                # CP selalu berasal dari Master. TP boleh dipilih guru,
+                                # tetapi hanya dari daftar TP resmi untuk materi tersebut.
                                 params["cp"]="\n".join(cp_lines)
-                                params["tp"]="\n".join(tp_lines)
-                                params["master_kurikulum"]="Gunakan CP dan TP resmi Master Kurikulum GuruWali berikut; jangan mengarang atau menggantinya."
-                                curriculum_snapshot=json.dumps({"version_id":curriculum_version_id,"version":dict(vrow) if vrow else {}, "jenjang":jenjang,"semester":semester,"mapel":mapel,"materi":materi,"cp":cp_lines,"tp":tp_lines}, ensure_ascii=False)
+                                requested_tp=str(params.get("tp","")).strip()
+                                official_set={x.strip() for x in tp_lines if x.strip()}
+                                if requested_tp:
+                                    selected_tp=[line.strip() for line in requested_tp.splitlines() if line.strip() and line.strip() in official_set]
+                                    # Jangan biarkan guru memasukkan TP di luar Master.
+                                    params["tp"]="\n".join(selected_tp)
+                                else:
+                                    params["tp"]="\n".join(tp_lines)
+                                params["master_kurikulum"]="Gunakan CP resmi Master Kurikulum GuruWali. TP yang digunakan hanya boleh berasal dari daftar Master; jangan mengarang, mengubah, atau menambahkan CP/TP."
+                                curriculum_snapshot=json.dumps({"version_id":curriculum_version_id,"version":dict(vrow) if vrow else {}, "jenjang":jenjang,"semester":semester,"mapel":mapel,"materi":materi,"cp":cp_lines,"tp":tp_lines,"selected_tp":params.get("tp","") .split("\n") if params.get("tp") else []}, ensure_ascii=False)
                 finally:
                     conn_m.close()
         except Exception:
