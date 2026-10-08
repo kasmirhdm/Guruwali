@@ -67,13 +67,32 @@ def _extract_ttd(content):
     lines = [l.strip() for l in inner.splitlines() if l.strip()]
     # Format: baris dengan | sebagai pemisah kolom
     kiri, kanan = [], []
-    for l in lines:
-        if "|" in l:
-            k, kn = l.split("|", 1)
-            kiri.append(k.strip())
-            kanan.append(kn.strip())
-        else:
-            kiri.append(l)
+    has_pipe = any("|" in l for l in lines)
+    if has_pipe:
+        for l in lines:
+            if "|" in l:
+                k, kn = l.split("|", 1)
+                kiri.append(k.strip())
+                kanan.append(kn.strip())
+            else:
+                # Baris tanpa | ikut kiri jika belum ada kanan, atau duplikat ke dua kolom
+                kiri.append(l)
+    else:
+        # Tanpa |: coba split jadi dua kolom berdasarkan kata kunci
+        # Kiri: Mengetahui/Kepala, Kanan: Guru/lokasi
+        left_kw = ["mengetahui", "kepala"]
+        for l in lines:
+            ll = l.lower()
+            if any(kw in ll for kw in left_kw) and not kanan:
+                kiri.append(l)
+            elif kanan or len(kiri) > len(lines) // 2:
+                kanan.append(l)
+            else:
+                # Setengah pertama ke kiri, setengah kedua ke kanan
+                if len(kiri) < (len(lines) + 1) // 2:
+                    kiri.append(l)
+                else:
+                    kanan.append(l)
     sisa = content[:m.start()] + content[m.end():]
     return (kiri, kanan), sisa
 

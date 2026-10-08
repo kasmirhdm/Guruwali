@@ -507,7 +507,7 @@ def build_prompt(gen_type, inputs):
             "[NIP GURU], [JABATAN GURU], [KOTA], dan [TANGGAL] bila datanya belum tersedia. "
             "Untuk mode guru-kepala, buat dua blok tanda tangan; untuk guru-saja hanya blok guru; "
             "untuk kepala-saja hanya blok kepala sekolah; untuk tanpa-tanda-tangan jangan membuat "
-            "blok tanda tangan. Bungkus blok tanda tangan dengan marker [[TTD]] dan [[/TTD]], gunakan | untuk memisahkan kolom kiri dan kanan. Jangan membuat tanda tangan fiktif atau gambar tanda tangan."
+            "blok tanda tangan. WAJIB: Bungkus dengan [[TTD]] dan [[/TTD]]. Setiap baris WAJIB pakai | untuk pisah kolom kiri-kanan. Contoh:\n[[TTD]]\nMengetahui, | Benteng, [TANGGAL]\nKepala SMPN 1 Benteng | Guru Mata Pelajaran\nUmi Kalsum | Kasmir\nNIP. 123456789013456 | NIP. ...\n[[/TTD]]\nJangan membuat tanda tangan fiktif atau gambar. Tulis [TANGGAL] (bukan [TANGGAR] atau typo lain) untuk tanggal."
         )
     if gen_type == "proposal":
         extra += (
