@@ -407,7 +407,9 @@ TEMPLATES = {
             "Buatkan SURAT TUGAS resmi sekolah dengan format baku: kop surat (tulis "
             "'[KOP SEKOLAH]' sebagai placeholder), nomor surat '[Nomor: .../..../{tahun}]', "
             "dasar/menimbang, isi penugasan (nama, NIP jika ada, keperluan, tanggal, tempat), "
-            "tembusan, dan blok tanda tangan kepala sekolah dengan NIP. Gunakan bahasa "
+            "tembusan hanya jika penerima tembusan diberikan guru; jika tidak, tulis '[Tembusan: diisi jika diperlukan]'. "
+            "Nomor surat, dasar/menimbang, dan pejabat penandatangan yang belum diberikan harus berupa placeholder, "
+            "bukan data yang dibuat AI. Gunakan bahasa "
             "administrasi yang formal."
         ),
     },
@@ -418,8 +420,10 @@ TEMPLATES = {
         "title": "Berita Acara {kegiatan}",
         "instr": (
             "Buatkan BERITA ACARA kegiatan dengan format resmi: judul, nomor '[Nomor: ...]', "
-            "hari/tanggal, tempat, pihak yang hadir, uraian jalannya kegiatan, hasil/keputusan "
-            "yang dicapai (pakai poin hasil yang ditempel guru), dan blok tanda tangan para "
+            "hari/tanggal, tempat, pihak yang hadir hanya berdasarkan daftar yang diberikan guru; jika tidak ada, "
+            "gunakan '[Pihak yang hadir: diisi sesuai daftar hadir]'. Uraian jalannya kegiatan harus bersumber "
+            "dari informasi guru, bukan kejadian yang dikarang. Hasil/keputusan gunakan poin yang ditempel guru; "
+            "jika kosong, gunakan placeholder '[Hasil/keputusan: diisi]'. Blok tanda tangan para "
             "pihak. Bahasa formal dan kronologis."
         ),
     },
