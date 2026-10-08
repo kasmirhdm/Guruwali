@@ -121,8 +121,8 @@
       loadCurriculum();
       $("curVersion").onchange=function(){loadCurriculum();};
       $("activateVersionBtn").onclick=function(){var id=Number($("curVersion").value||0);if(!id)return;api("POST","/api/platform-admin/curriculum/save",{action:"activate-version",id:id}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal mengaktifkan versi.");});};
-      $("cloneVersionBtn").onclick=function(){var src=Number($("curVersion").value||0);if(!src)return;var nama=prompt("Nama versi baru, contoh: Kurikulum Merdeka 2027/2028");if(!nama)return;var tahun=prompt("Tahun ajaran","2027/2028")||"";api("POST","/api/platform-admin/curriculum/clone-version",{source_version_id:src,nama:nama,tahun_ajaran:tahun}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal menyalin versi.");});};
-      $("newVersionBtn").onclick=function(){var nama=prompt("Nama versi, contoh: Kurikulum Merdeka 2027/2028");if(!nama)return;var tahun=prompt("Tahun ajaran, contoh: 2027/2028","2027/2028")||"";api("POST","/api/platform-admin/curriculum/save",{action:"version",nama:nama,tahun_ajaran:tahun}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal membuat versi.");});};
+      $("cloneVersionBtn").onclick=function(){var src=Number($("curVersion").value||0);if(src)curriculumVersionModal("clone",src);};
+      $("newVersionBtn").onclick=function(){curriculumVersionModal("new",0);};
       $("addSubjectBtn").onclick=function(){
         var b={action:"subject",version_id:Number($("curVersion").value||0),jenjang:$("curJenjang").value.trim(),fase:$("curFase").value.trim(),semester:$("curSemester").value,mapel:$("curMapel").value.trim()};
         if(!b.jenjang||!b.mapel){alert("Jenjang dan mata pelajaran wajib diisi.");return;}
@@ -132,6 +132,25 @@
       d.querySelectorAll(".toggle-school-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/school-pro",{school_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
     });
   }
+  function curriculumVersionModal(mode,sourceId){
+    var old=document.getElementById("gwVersionModal");if(old)old.remove();
+    var clone=mode==="clone",m=document.createElement("div");m.id="gwVersionModal";
+    m.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
+    m.innerHTML='<div style="background:#fff;width:min(520px,100%);border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.2);overflow:hidden">'+
+      '<div style="padding:18px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between"><strong style="font-size:18px">'+(clone?"Salin Versi Kurikulum":"Versi Kurikulum Baru")+'</strong><button id="gwVmClose" type="button" style="border:0;background:none;font-size:22px">×</button></div>'+
+      '<form id="gwVmForm" style="padding:20px"><label style="font-size:13px;font-weight:700">Nama versi<input id="gwVmNama" required maxlength="120" placeholder="Kurikulum Merdeka 2027/2028" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>'+
+      '<label style="display:block;font-size:13px;font-weight:700;margin-top:14px">Tahun ajaran<input id="gwVmTahun" maxlength="30" placeholder="2027/2028" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>'+
+      '<p id="gwVmMsg" style="font-size:13px;color:#dc2626"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" id="gwVmCancel" class="btn btn-ghost">Batal</button><button class="btn btn-primary">'+(clone?"Salin Versi":"Buat Versi")+'</button></div></form></div>';
+    document.body.appendChild(m);
+    function close(){m.remove();} $("gwVmClose").onclick=close;$("gwVmCancel").onclick=close;
+    $("gwVmForm").onsubmit=function(e){e.preventDefault();var nama=$("gwVmNama").value.trim(),tahun=$("gwVmTahun").value.trim();if(!nama){$("gwVmMsg").textContent="Nama versi wajib diisi.";return;}
+      var url=clone?"/api/platform-admin/curriculum/clone-version":"/api/platform-admin/curriculum/save";
+      var body=clone?{source_version_id:sourceId,nama:nama,tahun_ajaran:tahun}:{action:"version",nama:nama,tahun_ajaran:tahun};
+      api("POST",url,body).then(function(r){if(r.status===200){close();loadPlatform();}else $("gwVmMsg").textContent=r.data.error||"Gagal menyimpan.";});
+    };
+    setTimeout(function(){$("gwVmNama").focus();},40);
+  }
+
   function curriculumModal(type,parent,item){
     var isEdit=!!item;
     var title=(isEdit?"Edit ":"Tambah ")+(type==="subject"?"Mapel Kurikulum":type==="material"?"Materi":type==="cp"?"Capaian Pembelajaran":"Tujuan Pembelajaran");
