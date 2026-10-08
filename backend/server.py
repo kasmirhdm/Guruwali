@@ -120,9 +120,15 @@ class Handler(BaseHTTPRequestHandler):
             if not user:
                 self._send_json(401, {"error": "Belum masuk."})
                 return
-            name = rel[len("/uploads/"):]
+            name = rel[len("/uploads/")]
             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
             full = os.path.abspath(os.path.join(root, name))
+            # File gambar hasil generate disimpan dengan pola img_<user_id>_<timestamp>.png.
+            # Batasi akses ke pemilik file agar user lain tidak dapat menebak URL gambar.
+            mimg = re.match(r"^img_(\\d+)_\\d+\\.(?:png|jpg|jpeg|webp)$", name, re.IGNORECASE)
+            if not mimg or int(mimg.group(1)) != int(user["id"]):
+                self._send_json(404, {"error": "Tidak ditemukan."})
+                return
             if not full.startswith(root + os.sep) or not os.path.isfile(full):
                 self._send_json(404, {"error": "Tidak ditemukan."})
                 return
@@ -707,7 +713,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Belum tergabung."})
                 return
             if school.is_school_admin(user["id"], s["id"]):
-                self._send_json(400, {"error": "Admin tidak bisa keluar. Hapus sekolah atau tunjuk admin baru."})
+                self._send_json(400, {"error": "Admin tidak bisa keluar. Tunjuk admin baru terlebih dahulu."})
                 return
             import db as _db
             conn = _db.get_conn()
