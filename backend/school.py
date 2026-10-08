@@ -201,3 +201,59 @@ def increment_quota(user_id):
         conn.commit()
     finally:
         conn.close()
+
+
+def consume_quota(user_id, amount=1):
+    """Konsumsi kuota secara atomik untuk mencegah race condition."""
+    amount = max(1, int(amount))
+    conn = db.get_conn()
+    try:
+        school_row = conn.execute(
+            "SELECT s.id, s.quota_used, s.quota_limit, s.is_pro "
+            "FROM schools s JOIN school_members m ON m.school_id=s.id "
+            "WHERE m.user_id=? LIMIT 1", (user_id,)
+        ).fetchone()
+        if school_row and school_row["is_pro"]:
+            cur = conn.execute(
+                "UPDATE schools SET quota_used=quota_used+? "
+                "WHERE id=? AND quota_used+? <= quota_limit",
+                (amount, school_row["id"], amount),
+            )
+            if cur.rowcount == 1:
+                conn.commit()
+                return {"type":"school","school_id":school_row["id"],"amount":amount}
+            conn.rollback()
+            return None
+        cur = conn.execute(
+            "UPDATE users SET quota_used=quota_used+? "
+            "WHERE id=? AND (is_pro=1 OR quota_used+? <= quota_limit)",
+            (amount, user_id, amount),
+        )
+        if cur.rowcount == 1:
+            conn.commit()
+            return {"type":"user","user_id":user_id,"amount":amount}
+        conn.rollback()
+        return None
+    finally:
+        conn.close()
+
+
+def refund_quota(consumed):
+    """Kembalikan kuota yang sudah dicadangkan jika AI gagal."""
+    if not consumed:
+        return
+    conn = db.get_conn()
+    try:
+        if consumed["type"] == "school":
+            conn.execute(
+                "UPDATE schools SET quota_used=MAX(0, quota_used-?) WHERE id=?",
+                (consumed["amount"], consumed["school_id"]),
+            )
+        else:
+            conn.execute(
+                "UPDATE users SET quota_used=MAX(0, quota_used-?) WHERE id=?",
+                (consumed["amount"], consumed["user_id"]),
+            )
+        conn.commit()
+    finally:
+        conn.close()
