@@ -771,7 +771,27 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(params, dict):
             params = {}
         # batasi ukuran params agar tidak disalahgunakan
-        params = {str(k)[:40]: str(v)[:4000] for k, v in list(params.items())[:30]}
+        params = {str(k)[:40]: str(v)[:(12000 if str(k) == "soal" and gen_type in ("kunci-jawaban", "pembahasan") else 4000)] for k, v in list(params.items())[:30]}
+        # Identitas resmi dokumen berasal dari server, bukan dari browser.
+        signature_types = {"modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
+                           "jurnal-mengajar", "surat-tugas", "berita-acara", "proposal"}
+        if gen_type in signature_types:
+            school_data = school.get_user_school(user["id"])
+            if school_data:
+                params.update({
+                    "npsn": school_data.get("npsn") or "",
+                    "sekolah": school_data.get("nama") or "",
+                    "alamat_sekolah": school_data.get("alamat") or "",
+                    "kota_sekolah": school_data.get("kota") or "",
+                    "nama_kepala": school_data.get("nama_kepala") or "",
+                    "nip_kepala": school_data.get("nip_kepala") or "",
+                    "kop_judul": school_data.get("kop_judul") or "",
+                    "kop_subjudul": school_data.get("kop_subjudul") or "",
+                    "kop_telp": school_data.get("telp") or "",
+                    "kop_email": school_data.get("email") or "",
+                    "kop_website": school_data.get("kop_website") or "",
+                })
+            params["nama_guru"] = user.get("nama") or ""
         save = body.get("save", True)
         if gen_type not in prompts.TEMPLATES:
             self._send_json(400, {"error": f"Tipe generator tidak dikenal: {gen_type}."})
