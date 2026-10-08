@@ -125,7 +125,7 @@ class Handler(BaseHTTPRequestHandler):
             full = os.path.abspath(os.path.join(root, name))
             # File gambar hasil generate disimpan dengan pola img_<user_id>_<timestamp>.png.
             # Batasi akses ke pemilik file agar user lain tidak dapat menebak URL gambar.
-            mimg = re.match(r"^img_(\d+)_\d+\.(?:png|jpg|jpeg|webp)$", name, re.IGNORECASE)
+            mimg = re.match(r"^img_(\d+)_\d+_[a-z0-9]+\.(?:png|jpg|jpeg|webp)$", name, re.IGNORECASE)
             if not mimg or int(mimg.group(1)) != int(user["id"]):
                 self._send_json(404, {"error": "Tidak ditemukan."})
                 return
