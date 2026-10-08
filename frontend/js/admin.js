@@ -111,12 +111,7 @@
         '<button class="btn btn-ghost btn-small" id="activateVersionBtn">Aktifkan Versi</button>'+
         '<button class="btn btn-ghost btn-small" id="cloneVersionBtn">Salin Versi</button>'+
         '<button class="btn btn-ghost btn-small" id="newVersionBtn">+ Versi Baru</button></div>'+
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0">'+
-        '<input id="curJenjang" placeholder="Jenjang: SMP" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
-        '<input id="curFase" placeholder="Fase: D" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
-        '<select id="curSemester" style="padding:9px;border:1px solid #ddd;border-radius:8px"><option>Ganjil</option><option>Genap</option></select>'+
-        '<input id="curMapel" placeholder="Mata Pelajaran" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
-        '</div><button class="btn btn-primary" id="addSubjectBtn">+ Tambah Kurikulum Mapel</button>'+
+        '<div style="display:flex;justify-content:flex-end;margin:14px 0"><button class="btn btn-primary" id="addSubjectBtn">+ Tambah Kurikulum Mapel</button></div>'+
         '<div id="curriculumTree" style="margin-top:18px"><p class="admin-muted">Memuat...</p></div></div>';
       loadCurriculum();
       $("curVersion").onchange=function(){loadCurriculum();};
