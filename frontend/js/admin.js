@@ -228,7 +228,7 @@
       }
       function render(){
         var q=($("curSearch").value||"").trim(),j=$("curJenjangFilter").value,sem=$("curSemesterFilter").value;
-        var html="",shown=0;
+        var html="",shown=0;\n        var oldHint=$("curFilterCount");if(oldHint)oldHint.remove();
         data.forEach(function(s){
           if(j&&s.jenjang!==j)return;
           if(sem&&normSem(s.semester)!==sem)return;
@@ -244,7 +244,7 @@
           if(q&&!mats.length)return;
           shown++;
           html+='<details open style="border:1px solid #e2e8f0;border-radius:12px;padding:0;margin-bottom:10px;background:#fff">'+
-            '<summary style="cursor:pointer;padding:13px 14px;font-weight:800;list-style:none">▸ '+esc(s.jenjang)+' • Fase '+esc(s.fase||"—")+' • Semester '+esc(s.semester)+' • '+esc(s.mapel)+
+            '<summary style="cursor:pointer;padding:13px 14px;font-weight:800;list-style:none">▸ '+esc(s.jenjang)+' • Fase '+esc(s.fase||"—")+' • Semester '+(normSem(s.semester)==='1'?'1':normSem(s.semester)==='2'?'2':esc(s.semester))+' • '+esc(s.mapel)+
             ' <span style="float:right;font-weight:500;color:#64748b;font-size:12px">'+(s.materi||[]).length+' materi</span></summary>'+
             '<div style="padding:0 12px 12px">'+
             '<div style="display:flex;justify-content:flex-end;margin:4px 0 8px"><button class="btn btn-ghost btn-small" onclick="editCurriculum(\'subject\','+s.id+')">Edit</button><button class="btn btn-ghost btn-small" onclick="delCurriculum(\'subject\','+s.id+')" style="color:#ef4444;margin-left:4px">Hapus Mapel</button></div>'+
