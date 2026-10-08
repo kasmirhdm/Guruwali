@@ -342,6 +342,7 @@
       nama_kepala: school ? (school.nama_kepala || "") : (state.user.nama_kepala || ""),
       nip_kepala: school ? (school.nip_kepala || "") : (state.user.nip_kepala || ""),
       jabatan_guru: state.user.jabatan_guru || "Guru",
+      nama_guru: state.user.nama || "",
       nip_guru: state.user.nip_guru || "",
       signature_mode: state.user.signature_mode || "guru-kepala",
       kop_mode: state.user.kop_mode || "admin",
@@ -838,12 +839,12 @@
         var p = Object.assign({}, params);
         if (SIGNATURE_TYPES.indexOf(t) >= 0) p = Object.assign(p, signatureParams());
         // kunci & pembahasan memakai soal yang baru dibuat agar konsisten
-        if ((t === "kunci-jawaban" || t === "pembahasan") && lastSoal) p.soal = lastSoal;
+        if ((t === "kunci-jawaban" || t === "pembahasan") && lastSoal) { p.soal = lastSoal; p.package_mode = "true"; }
         api("POST", "/api/generate", { type: t, params: p, save: true, model: currentModelOverride() }).then(function (res) {
           if (res.status === 200) {
             done++;
             row.classList.add("ok"); var sp = row.querySelector("span"); sp.classList.remove("spin"); sp.innerHTML = icon("checkCircle", 18);
-            if (t === "soal-pg" && res.data.content) lastSoal = res.data.content.slice(0, 6000);
+            if (t === "soal-pg" && res.data.content) lastSoal = res.data.content;
             if (res.data.quota) {
               state.quota = res.data.quota;
               state.user.quota_used = res.data.quota.used;
