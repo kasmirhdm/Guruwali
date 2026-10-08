@@ -920,6 +920,10 @@ class Handler(BaseHTTPRequestHandler):
             school.refund_quota(consumed)
             self._send_json(502, {"error": str(e)})
             return
+        except Exception as e:
+            school.refund_quota(consumed)
+            self._send_json(502, {"error": f"Gagal membuat gambar: {e}"})
+            return
         # --- simpan hasil ---
         image_url = result.get("url")
         if result.get("b64"):
@@ -956,7 +960,7 @@ class Handler(BaseHTTPRequestHandler):
             "document": doc,
             "model": model_used,
             "quota": {
-                "used": (sq["used"] + 2) if sq else qrow["quota_used"],
+                "used": sq["used"] if sq else qrow["quota_used"],
                 "limit": sq["limit"] if sq else qrow["quota_limit"],
                 "is_pro": True if sq else bool(qrow["is_pro"]),
                 "school": bool(sq),
