@@ -132,6 +132,36 @@
       d.querySelectorAll(".toggle-school-pro").forEach(function(b){b.onclick=function(){api("POST","/api/platform-admin/school-pro",{school_id:Number(b.dataset.id),enabled:b.dataset.enabled==="1"}).then(loadPlatform);};});
     });
   }
+  function curriculumModal(type,parent,item){
+    var isEdit=!!item, title=isEdit?"Edit ":"Tambah ";
+    title+=type==="material"?"Materi":type==="cp"?"Capaian Pembelajaran":"Tujuan Pembelajaran";
+    var old=document.getElementById("gwCurriculumModal"); if(old)old.remove();
+    var kode=type==="material"?"":((item&&item.kode)||"");
+    var desc=isEdit?(item.deskripsi||item.nama||""):"";
+    var order=isEdit?(item.urutan||0):0;
+    var modal=document.createElement("div"); modal.id="gwCurriculumModal";
+    modal.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
+    modal.innerHTML='<div style="background:#fff;width:min(620px,100%);border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.2);overflow:hidden">'+
+      '<div style="padding:18px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center"><strong style="font-size:18px">'+title+'</strong><button id="gwCmClose" style="border:0;background:none;font-size:22px;cursor:pointer">×</button></div>'+
+      '<form id="gwCmForm" style="padding:20px">'+
+      (type==="material"?"":'<label style="display:block;font-size:13px;font-weight:700;margin-bottom:12px">Kode<input id="gwCmKode" value="'+esc(kode)+'" placeholder="Contoh: CP 1 / TP 1.1" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>')+
+      '<label style="display:block;font-size:13px;font-weight:700"> '+(type==="material"?"Nama materi":"Deskripsi")+
+      '<textarea id="gwCmDesc" required rows="6" placeholder="'+(type==="material"?"Contoh: Bilangan Bulat":"Tuliskan deskripsi resmi...")+'" style="width:100%;padding:11px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px;resize:vertical">'+esc(desc)+'</textarea></label>'+
+      '<label style="display:block;font-size:13px;font-weight:700;margin-top:12px">Urutan<input id="gwCmOrder" type="number" min="0" value="'+order+'" style="width:120px;padding:10px;margin-top:5px;border:1px solid #cbd5e1;border-radius:10px"></label>'+
+      '<div id="gwCmMsg" style="font-size:13px;margin-top:10px"></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px"><button type="button" id="gwCmCancel" class="btn btn-ghost">Batal</button><button class="btn btn-primary">Simpan</button></div></form></div>';
+    document.body.appendChild(modal);
+    function close(){modal.remove();}
+    $("gwCmClose").onclick=close;$("gwCmCancel").onclick=close;
+    $("gwCmForm").onsubmit=function(e){e.preventDefault();
+      var b={action:type,kode:document.getElementById("gwCmKode")?$("gwCmKode").value.trim():"",deskripsi:$("gwCmDesc").value.trim(),urutan:Number($("gwCmOrder").value||0)};
+      if(type==="material"){b.nama=b.deskripsi;delete b.deskripsi;b.subject_id=parent;} 
+      if(type==="cp"){b.material_id=parent;} if(type==="tp"){b.cp_id=parent;}
+      if(isEdit)b.id=item.id;
+      if(!b.deskripsi && type==="material"){ $("gwCmMsg").textContent="Nama materi wajib diisi.";return; }
+      api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200){close();loadCurriculum();}else $("gwCmMsg").textContent=r.data.error||"Gagal menyimpan.";});
+    };
+    setTimeout(function(){var q=type==="material"?$("gwCmDesc"):($("gwCmKode")||$("gwCmDesc"));if(q)q.focus();},50);
+  }
   function loadCurriculum(){
     var v=$("curVersion");
     var url="/api/platform-admin/curriculum"+(v&&v.value?("?version_id="+encodeURIComponent(v.value)):"");
@@ -142,15 +172,15 @@
       box.innerHTML=data.map(function(s){
         return '<div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:12px">'+
           '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong>'+esc(s.jenjang)+' • '+esc(s.fase||"—")+' • '+esc(s.semester)+' • '+esc(s.mapel)+'</strong>'+
-          '<button class="btn btn-ghost btn-small" onclick="delCurriculum(\'subject\','+s.id+')" style="color:#ef4444">Hapus Mapel</button></div>'+
+          '<button class="btn btn-ghost btn-small" onclick="editCurriculum(\'subject\','+s.id+')" style="margin-right:5px">Edit</button><button class="btn btn-ghost btn-small" onclick="delCurriculum(\'subject\','+s.id+')" style="color:#ef4444">Hapus Mapel</button></div>'+
           '<div style="margin-top:12px">'+
           s.materi.map(function(m){
-            return '<div style="background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0"><strong>📖 '+esc(m.nama)+'</strong> <button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\','+m.id+','+s.id+')" style="margin-left:8px">+ Materi</button>'+
+            return '<div style="background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0"><strong>📖 '+esc(m.nama)+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'material\','+m.id+')" style="margin-left:8px">Edit</button> <button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'material\',0,'+s.id+')" style="margin-left:8px">+ Materi</button>'+
               '<div style="margin:8px 0 0 12px">'+
               m.cp.map(function(cp){
-                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong><div>'+esc(cp.deskripsi)+'</div>'+
+                return '<div style="border-left:3px solid #3b82f6;padding:8px 0 8px 10px;margin-top:8px"><strong>CP '+esc(cp.kode||"")+'</strong> <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'cp\','+cp.id+')" style="margin-left:6px">Edit</button><div>'+esc(cp.deskripsi)+'</div>+
                   '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'tp\',0,'+cp.id+')" style="margin-top:5px">+ TP</button>'+
-                  '<div style="margin-left:12px">'+cp.tp.map(function(tp){return '<div style="padding:5px 0;font-size:13px">🎯 '+(tp.kode?'<b>'+esc(tp.kode)+'</b> ':'')+esc(tp.deskripsi)+' <button onclick="delCurriculum(\'tp\','+tp.id+')" style="border:0;background:none;color:#ef4444;cursor:pointer">Hapus</button></div>';}).join("")+'</div>'+
+                  '<div style="margin-left:12px">'+cp.tp.map(function(tp){return '<div style="padding:5px 0;font-size:13px">🎯 '+(tp.kode?'<b>'+esc(tp.kode)+'</b> ':'')+esc(tp.deskripsi)+' <button class="btn btn-ghost btn-small" onclick="editCurriculum(\'tp\','+tp.id+')" style="margin-left:5px">Edit</button> <button onclick="delCurriculum(\'tp\','+tp.id+')" style="border:0;background:none;color:#ef4444;cursor:pointer">Hapus</button></div>';}).join("")+'</div>'+
                   '</div>';
               }).join("")+'</div>'+
               '<button class="btn btn-ghost btn-small" onclick="addCurriculumItem(\'cp\',0,'+m.id+')" style="margin-top:8px">+ CP</button></div>';
@@ -160,15 +190,14 @@
     });
   }
   window.addCurriculumItem=function(type,id,parent){
-    var title=type==="material"?"Tambah Materi":type==="cp"?"Tambah Capaian Pembelajaran":"Tambah Tujuan Pembelajaran";
-    var kode=prompt(title+" — kode (opsional):",""); 
-    var value=prompt(title+" — deskripsi:");
-    if(!value)return;
-    var b={action:type,kode:kode||"",deskripsi:value};
-    if(type==="material"){b.subject_id=parent;b.nama=value;delete b.deskripsi;}
-    if(type==="cp"){b.material_id=parent;}
-    if(type==="tp"){b.cp_id=parent;}
-    api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menyimpan.");});
+    curriculumModal(type,parent,null);
+  };
+  window.editCurriculum=function(type,id){
+    api("GET","/api/platform-admin/curriculum").then(function(r){
+      var data=(r.data&&r.data.data)||[], found=null,parent=0;
+      data.forEach(function(s){(s.materi||[]).forEach(function(m){if(type==="material"&&m.id===id){found=m;parent=s.id;} (m.cp||[]).forEach(function(cp){if(type==="cp"&&cp.id===id){found=cp;parent=m.id;} (cp.tp||[]).forEach(function(tp){if(type==="tp"&&tp.id===id){found=tp;parent=cp.id;}});});});});
+      if(found)curriculumModal(type,parent,found);
+    });
   };
   window.delCurriculum=function(type,id){if(!confirm("Hapus data ini? Data turunannya juga akan ikut dihapus."))return;api("POST","/api/platform-admin/curriculum/delete",{entity:type,id:id}).then(function(r){if(r.status===200)loadCurriculum();else alert(r.data.error||"Gagal menghapus.");});};
   function init(){
