@@ -261,6 +261,11 @@
 
   function refreshQuotaUI() {
     var q = state.quota;
+    // Jika anggota sekolah Pro, tampilkan kuota sekolah bersama sebagai sumber kuota aktif.
+    var school = window.GWSchool && window.GWSchool.data && window.GWSchool.data.school;
+    if (school && school.is_pro) {
+      q = { used: school.quota_used || 0, limit: school.quota_limit || 0, is_pro: true };
+    }
     var txt = q ? (q.used + " / " + q.limit + (q.is_pro ? " (Pro)" : "")) : "";
     if ($("pkQuota")) $("pkQuota").value = txt;
   }
@@ -324,8 +329,11 @@
     $("pfKopTelp").value = state.user.kop_telp || "";
     $("pfKopEmail").value = state.user.kop_email || "";
     $("pfKopWebsite").value = state.user.kop_website || "";
-    $("pfQuota").value = state.user.quota_used + " / " + state.user.quota_limit +
-      (state.user.is_pro ? " (Pro)" : "");
+    var activeQuota = (window.GWSchool && window.GWSchool.data && window.GWSchool.data.school && window.GWSchool.data.school.is_pro)
+      ? window.GWSchool.data.school
+      : state.user;
+    $("pfQuota").value = (activeQuota.quota_used || 0) + " / " + (activeQuota.quota_limit || 0) +
+      (activeQuota.is_pro ? " (Pro)" : "");
   }
 
   var SIGNATURE_TYPES = ["modul-ajar", "rpp", "atp", "program-tahunan", "program-semester",
