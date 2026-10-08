@@ -532,7 +532,7 @@ def sanitize_math_output(text):
     text = str(text)
 
     # Hapus pembungkus matematika LaTeX/Markdown.
-    text = re.sub(r"\\$\\$?", "", text)
+    text = re.sub(r"\$+", "", text)
 
     # Perintah simbol yang umum.
     symbols = {

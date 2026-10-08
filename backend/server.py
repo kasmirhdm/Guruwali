@@ -43,6 +43,14 @@ AUTH_RATE_MAX = 10
 _rate = {}
 
 
+def _client_ip(handler):
+    # Ambil IP asli dari header proxy
+    fwd = handler.headers.get("X-Real-IP") or handler.headers.get("X-Forwarded-For")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return handler.client_address[0]
+
+
 def rate_ok(ip, bucket="general", limit=RATE_MAX):
     t = time.time()
     key = (bucket, ip)
@@ -184,7 +192,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if path.startswith("/api/"):
-            if not rate_ok(self.client_address[0], "general", RATE_MAX):
+            if not rate_ok(_client_ip(self), "general", RATE_MAX):
                 self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
                 return
             self._api_get(path, urllib.parse.parse_qs(parsed.query))
@@ -198,7 +206,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         bucket = "ai" if parsed.path in ("/api/generate", "/api/generate-image") else ("auth" if parsed.path in ("/api/login", "/api/register") else "general")
         limit = AI_RATE_MAX if bucket == "ai" else (AUTH_RATE_MAX if bucket == "auth" else RATE_MAX)
-        if not rate_ok(self.client_address[0], bucket, limit):
+        if not rate_ok(_client_ip(self), bucket, limit):
             self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
             return
         self._api_post(parsed.path)
@@ -208,7 +216,7 @@ class Handler(BaseHTTPRequestHandler):
         if not parsed.path.startswith("/api/"):
             self._send_json(404, {"error": "Tidak ditemukan."})
             return
-        if not rate_ok(self.client_address[0]):
+        if not rate_ok(_client_ip(self)):
             self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
             return
         self._api_put(parsed.path)
@@ -218,7 +226,7 @@ class Handler(BaseHTTPRequestHandler):
         if not parsed.path.startswith("/api/"):
             self._send_json(404, {"error": "Tidak ditemukan."})
             return
-        if not rate_ok(self.client_address[0]):
+        if not rate_ok(_client_ip(self)):
             self._send_json(429, {"error": "Terlalu banyak permintaan. Coba lagi sebentar."})
             return
         m = re.match(r"^/api/documents/(\d+)$", parsed.path)
