@@ -417,6 +417,35 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        if path == "/api/platform-admin/curriculum/export":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            try:
+                vid=int(qs.get("version_id",["0"])[0])
+            except Exception:
+                vid=0
+            conn=db.get_conn()
+            try:
+                v=conn.execute("SELECT * FROM curriculum_versions WHERE id=?",(vid,)).fetchone()
+                if not v:
+                    self._send_json(404, {"error":"Versi kurikulum tidak ditemukan."}); return
+                subjects=[]
+                for s in conn.execute("SELECT * FROM curriculum_subjects WHERE version_id=? ORDER BY id",(vid,)).fetchall():
+                    mats=[]
+                    for m in conn.execute("SELECT * FROM curriculum_materials WHERE subject_id=? ORDER BY urutan,id",(s["id"],)).fetchall():
+                        cps=[]
+                        for cp in conn.execute("SELECT * FROM curriculum_cp WHERE material_id=? ORDER BY id",(m["id"],)).fetchall():
+                            tps=[dict(x) for x in conn.execute("SELECT kode,deskripsi,urutan FROM curriculum_tp WHERE cp_id=? ORDER BY urutan,id",(cp["id"],)).fetchall()]
+                            cps.append({"kode":cp["kode"],"deskripsi":cp["deskripsi"],"tp":tps})
+                        mats.append({"nama":m["nama"],"urutan":m["urutan"],"cp":cps})
+                    subjects.append({"jenjang":s["jenjang"],"fase":s["fase"],"semester":s["semester"],"mapel":s["mapel"],"materi":mats})
+                payload={"format":"guruwali-master-kurikulum-v1","exported_at":db.now(),"version":{"nama":v["nama"],"tahun_ajaran":v["tahun_ajaran"]},"subjects":subjects}
+            finally:
+                conn.close()
+            data=json.dumps(payload,ensure_ascii=False).encode("utf-8")
+            self._send_file("backup-master-kurikulum.json",data,"application/json; charset=utf-8")
+            return
+
         if path == "/api/platform-admin/curriculum-versions":
             user=self._user()
             if not platform_admin.is_platform_admin(user):
@@ -582,6 +611,48 @@ class Handler(BaseHTTPRequestHandler):
         user = self._user()
         if not user:
             self._send_json(401, {"error": "Belum masuk."})
+            return
+
+        if path == "/api/platform-admin/curriculum/import":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error":"Akses admin GuruWali ditolak."}); return
+            payload=body if isinstance(body,dict) else {}
+            if payload.get("format")!="guruwali-master-kurikulum-v1":
+                self._send_json(400, {"error":"Format backup tidak dikenali."}); return
+            src=payload.get("version") or {}
+            nama=str(src.get("nama","")).strip()[:120]
+            tahun=str(src.get("tahun_ajaran","")).strip()[:30]
+            subjects=payload.get("subjects")
+            if not nama or not isinstance(subjects,list):
+                self._send_json(400, {"error":"Backup tidak lengkap."}); return
+            if len(subjects)>500:
+                self._send_json(400, {"error":"Backup terlalu besar (maksimal 500 mapel)."}); return
+            conn=db.get_conn()
+            try:
+                cur=conn.execute("INSERT INTO curriculum_versions(nama,tahun_ajaran,aktif,created_at) VALUES(?,?,0,?)",(nama+" (Restore)",tahun,db.now()))
+                vid=cur.lastrowid; count={"subject":0,"material":0,"cp":0,"tp":0}
+                for s in subjects:
+                    sc=conn.execute("INSERT INTO curriculum_subjects(version_id,jenjang,fase,semester,mapel,created_at) VALUES(?,?,?,?,?,?)",
+                        (vid,str(s.get("jenjang",""))[:30],str(s.get("fase",""))[:10],str(s.get("semester",""))[:30],str(s.get("mapel",""))[:120],db.now()))
+                    count["subject"]+=1
+                    for m in (s.get("materi") or [])[:500]:
+                        mc=conn.execute("INSERT INTO curriculum_materials(subject_id,nama,urutan,created_at) VALUES(?,?,?,?)",(sc.lastrowid,str(m.get("nama",""))[:200],int(m.get("urutan",0)),db.now()))
+                        count["material"]+=1
+                        for cp in (m.get("cp") or [])[:500]:
+                            cc=conn.execute("INSERT INTO curriculum_cp(material_id,kode,deskripsi,created_at) VALUES(?,?,?,?)",(mc.lastrowid,str(cp.get("kode",""))[:50],str(cp.get("deskripsi",""))[:10000],db.now()))
+                            count["cp"]+=1
+                            for tp in (cp.get("tp") or [])[:500]:
+                                conn.execute("INSERT INTO curriculum_tp(cp_id,kode,deskripsi,urutan,created_at) VALUES(?,?,?,?,?)",(cc.lastrowid,str(tp.get("kode",""))[:50],str(tp.get("deskripsi",""))[:10000],int(tp.get("urutan",0)),db.now()))
+                                count["tp"]+=1
+                conn.commit()
+                platform_admin.audit(user["id"],"import_curriculum_version","curriculum_version",vid,count)
+                self._send_json(200,{"ok":True,"id":vid,"count":count})
+            except sqlite3.IntegrityError as e:
+                conn.rollback(); self._send_json(400,{"error":"Data backup memiliki mapel duplikat atau format tidak sesuai: "+str(e)})
+            except Exception as e:
+                conn.rollback(); self._send_json(400,{"error":str(e)})
+            finally:
+                conn.close()
             return
 
         if path == "/api/platform-admin/curriculum/save":
