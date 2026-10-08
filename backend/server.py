@@ -690,6 +690,39 @@ class Handler(BaseHTTPRequestHandler):
                 conn.close()
             return
 
+        if path == "/api/platform-admin/billing/approve":
+            if not platform_admin.is_platform_admin(user):
+                self._send_json(403, {"error": "Akses admin GuruWali ditolak."}); return
+            order_no = str(body.get("order_no") or "").strip()
+            conn = db.get_conn()
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                order = conn.execute(
+                    "SELECT o.*,p.nama FROM billing_orders o JOIN billing_packages p ON p.id=o.package_id WHERE o.order_no=?",
+                    (order_no,)
+                ).fetchone()
+                if not order:
+                    conn.rollback(); self._send_json(404, {"error": "Order tidak ditemukan."}); return
+                if order["status"] == "paid":
+                    conn.commit(); self._send_json(200, {"ok": True, "already_paid": True}); return
+                u = conn.execute("SELECT quota_used FROM users WHERE id=?", (order["user_id"],)).fetchone()
+                if not u:
+                    conn.rollback(); self._send_json(404, {"error": "Pengguna tidak ditemukan."}); return
+                new_limit = int(u["quota_used"] or 0) + int(order["kredit"])
+                conn.execute(
+                    "UPDATE users SET is_pro=1,quota_limit=? WHERE id=?",
+                    (new_limit, order["user_id"])
+                )
+                conn.execute(
+                    "UPDATE billing_orders SET status='paid',payment_ref='manual-admin',paid_at=? WHERE id=? AND status='pending'",
+                    (db.now(), order["id"])
+                )
+                conn.commit()
+                self._send_json(200, {"ok": True, "order_no": order_no, "kredit": order["kredit"]})
+            finally:
+                conn.close()
+            return
+
         if path == "/api/billing/webhook":
             # Endpoint payment-gateway neutral. Gateway harus mengirim secret yang sama.
             secret = os.environ.get("GURUWALI_PAYMENT_WEBHOOK_SECRET", "")
