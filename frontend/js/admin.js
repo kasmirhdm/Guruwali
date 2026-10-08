@@ -92,9 +92,9 @@
   }
   function loadPlatform(){
     var d=$("platformAdminContent");if(!d)return;
-    Promise.all([api("GET","/api/platform-admin/dashboard"),api("GET","/api/platform-admin/users"),api("GET","/api/platform-admin/schools"),api("GET","/api/platform-admin/audit")]).then(function(rs){
+    Promise.all([api("GET","/api/platform-admin/dashboard"),api("GET","/api/platform-admin/users"),api("GET","/api/platform-admin/schools"),api("GET","/api/platform-admin/audit"),api("GET","/api/platform-admin/curriculum-versions")]).then(function(rs){
       if(rs[0].status!==200){d.innerHTML='<div class="admin-card"><h3>Akses ditolak</h3><p class="admin-muted">'+esc(rs[0].data.error||"Admin GuruWali hanya untuk platform admin.")+'</p></div>';return;}
-      var x=rs[0].data.dashboard,u=rs[1].data.users||[],s=rs[2].data.schools||[],logs=rs[3].data.logs||[];
+      var x=rs[0].data.dashboard,u=rs[1].data.users||[],s=rs[2].data.schools||[],logs=rs[3].data.logs||[],versions=rs[4].data.versions||[];
       d.innerHTML='<div class="admin-hero"><h2>Admin GuruWali</h2><p class="admin-muted">Pusat kendali seluruh platform. Pengaturan sensitif tetap divalidasi di server.</p></div><div class="admin-kpis">'+
       [["Pengguna",x.users],["Sekolah",x.schools],["Pengguna Pro",x.pro_users],["Sekolah Pro",x.pro_schools],["Dokumen",x.documents],["Anggota sekolah",x.members]].map(function(k){return'<div class="admin-kpi"><span>'+k[0]+'</span><strong>'+k[1]+'</strong></div>';}).join("")+'</div>'+
       '<div class="admin-grid"><div class="admin-card"><h3>Pengguna</h3><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Nama</th><th>Email</th><th>Sekolah</th><th>Pro</th><th>Aksi</th></tr></thead><tbody>'+
@@ -106,6 +106,10 @@
       '</tbody></table></div></div>';
       // Master Kurikulum: Jenjang -> Semester -> Mapel -> Materi -> CP -> TP
       d.innerHTML+='<div class="admin-card"><h3>📚 Master Kurikulum</h3><p class="admin-muted">Kelola CP dan TP resmi yang akan menjadi sumber GuruWali untuk guru.</p>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;padding:10px;background:#f8fafc;border-radius:10px">'+
+        '<select id="curVersion" style="padding:9px;border:1px solid #ddd;border-radius:8px;min-width:220px">'+versions.map(function(v){return '<option value="'+v.id+'" '+(v.aktif?'selected':'')+'>'+esc(v.nama)+(v.aktif?' • AKTIF':'')+'</option>';}).join('')+'</select>'+
+        '<button class="btn btn-ghost btn-small" id="activateVersionBtn">Aktifkan Versi</button>'+
+        '<button class="btn btn-ghost btn-small" id="newVersionBtn">+ Versi Baru</button></div>'+
         '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0">'+
         '<input id="curJenjang" placeholder="Jenjang: SMP" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
         '<input id="curFase" placeholder="Fase: D" style="padding:9px;border:1px solid #ddd;border-radius:8px">'+
@@ -114,8 +118,11 @@
         '</div><button class="btn btn-primary" id="addSubjectBtn">+ Tambah Kurikulum Mapel</button>'+
         '<div id="curriculumTree" style="margin-top:18px"><p class="admin-muted">Memuat...</p></div></div>';
       loadCurriculum();
+      $("curVersion").onchange=function(){loadCurriculum();};
+      $("activateVersionBtn").onclick=function(){var id=Number($("curVersion").value||0);if(!id)return;api("POST","/api/platform-admin/curriculum/save",{action:"activate-version",id:id}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal mengaktifkan versi.");});};
+      $("newVersionBtn").onclick=function(){var nama=prompt("Nama versi, contoh: Kurikulum Merdeka 2027/2028");if(!nama)return;var tahun=prompt("Tahun ajaran, contoh: 2027/2028","2027/2028")||"";api("POST","/api/platform-admin/curriculum/save",{action:"version",nama:nama,tahun_ajaran:tahun}).then(function(r){if(r.status===200)loadPlatform();else alert(r.data.error||"Gagal membuat versi.");});};
       $("addSubjectBtn").onclick=function(){
-        var b={action:"subject",jenjang:$("curJenjang").value.trim(),fase:$("curFase").value.trim(),semester:$("curSemester").value,mapel:$("curMapel").value.trim()};
+        var b={action:"subject",version_id:Number($("curVersion").value||0),jenjang:$("curJenjang").value.trim(),fase:$("curFase").value.trim(),semester:$("curSemester").value,mapel:$("curMapel").value.trim()};
         if(!b.jenjang||!b.mapel){alert("Jenjang dan mata pelajaran wajib diisi.");return;}
         api("POST","/api/platform-admin/curriculum/save",b).then(function(r){if(r.status===200){$("curJenjang").value="";$("curFase").value="";$("curMapel").value="";loadCurriculum();}else alert(r.data.error||"Gagal menyimpan.");});
       };
@@ -124,7 +131,9 @@
     });
   }
   function loadCurriculum(){
-    api("GET","/api/platform-admin/curriculum").then(function(r){
+    var v=$("curVersion");
+    var url="/api/platform-admin/curriculum"+(v&&v.value?("?version_id="+encodeURIComponent(v.value)):"");
+    api("GET",url).then(function(r){
       var box=$("curriculumTree"); if(!box)return;
       var data=(r.data&&r.data.data)||[];
       if(!data.length){box.innerHTML='<p class="admin-muted">Belum ada Master Kurikulum. Tambahkan jenjang, semester, dan mapel di atas.</p>';return;}
