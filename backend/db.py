@@ -89,7 +89,44 @@ CREATE TABLE IF NOT EXISTS dapodik_imports (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_dapodik_imports_user ON dapodik_imports(user_id);
-CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);\nCREATE TABLE IF NOT EXISTS curriculum_subjects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    jenjang TEXT NOT NULL,
+    fase TEXT DEFAULT '',
+    semester TEXT NOT NULL,
+    mapel TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_curriculum_subject_unique ON curriculum_subjects(jenjang,fase,semester,mapel);
+CREATE TABLE IF NOT EXISTS curriculum_materials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject_id INTEGER NOT NULL,
+    nama TEXT NOT NULL,
+    urutan INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(subject_id) REFERENCES curriculum_subjects(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS curriculum_cp (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    material_id INTEGER NOT NULL,
+    kode TEXT DEFAULT '',
+    deskripsi TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(material_id) REFERENCES curriculum_materials(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS curriculum_tp (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cp_id INTEGER NOT NULL,
+    kode TEXT DEFAULT '',
+    deskripsi TEXT NOT NULL,
+    urutan INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(cp_id) REFERENCES curriculum_cp(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_curriculum_material_subject ON curriculum_materials(subject_id);
+CREATE INDEX IF NOT EXISTS idx_curriculum_cp_material ON curriculum_cp(material_id);
+CREATE INDEX IF NOT EXISTS idx_curriculum_tp_cp ON curriculum_tp(cp_id);
+
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 """
 
