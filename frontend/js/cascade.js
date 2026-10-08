@@ -270,8 +270,20 @@ var GWCascade = (function () {
       }
       list.innerHTML='<span style="font-size:12px;color:#64748b">Memuat TP...</span>';
       fetch("/api/master-curriculum?"+params.toString()).then(function(r){return r.json();}).then(function(r){
-        var rows=r.data||[], tps=[];
-        rows.forEach(function(row){(row.tp||[]).forEach(function(tp){tps.push({materi:row.materi,cp:row.cp.deskripsi,kode:tp.kode,deskripsi:tp.deskripsi});});});
+        var rows=r.data||[], tps=[], cps=[];
+        rows.forEach(function(row){
+          if(row.cp && row.cp.deskripsi && cps.indexOf(row.cp.deskripsi)<0) cps.push(row.cp.deskripsi);
+          (row.tp||[]).forEach(function(tp){tps.push({materi:row.materi,cp:row.cp.deskripsi,kode:tp.kode,deskripsi:tp.deskripsi});});
+        });
+        var cpField=field(form,"cp");
+        if(cpField && cps.length){
+          cpField.value=cps.join("\n");
+          cpField.readOnly=true;
+          cpField.style.background="#f8fafc";
+        } else if(cpField){
+          cpField.readOnly=false;
+          cpField.style.background="";
+        }
         if(!tps.length){list.innerHTML='<span style="font-size:12px;color:#64748b">Belum ada TP untuk kombinasi ini.</span>';hidden.value="";return;}
         list.innerHTML=tps.map(function(tp,i){
           var text=(tp.kode?tp.kode+": ":"")+tp.deskripsi;
