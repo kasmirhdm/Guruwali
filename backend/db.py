@@ -139,6 +139,34 @@ CREATE INDEX IF NOT EXISTS idx_curriculum_cp_material ON curriculum_cp(material_
 CREATE INDEX IF NOT EXISTS idx_curriculum_tp_cp ON curriculum_tp(cp_id);
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE TABLE IF NOT EXISTS billing_packages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kode TEXT UNIQUE NOT NULL,
+    nama TEXT NOT NULL,
+    harga INTEGER NOT NULL,
+    kredit INTEGER NOT NULL,
+    masa_hari INTEGER DEFAULT 30,
+    target TEXT DEFAULT 'user',
+    aktif INTEGER DEFAULT 1,
+    created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS billing_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_no TEXT UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL,
+    package_id INTEGER NOT NULL,
+    amount INTEGER NOT NULL,
+    kredit INTEGER NOT NULL,
+    target TEXT DEFAULT 'user',
+    status TEXT DEFAULT 'pending',
+    payment_ref TEXT DEFAULT '',
+    paid_at INTEGER,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(package_id) REFERENCES billing_packages(id)
+);
+CREATE INDEX IF NOT EXISTS idx_billing_orders_user ON billing_orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_billing_orders_status ON billing_orders(status);
 """
 
 def get_conn():
@@ -204,6 +232,18 @@ def init_db():
         for name, definition in school_migrations.items():
             if name not in school_cols:
                 conn.execute(f"ALTER TABLE schools ADD COLUMN {name} {definition}")
+        # Paket awal GuruWali. INSERT OR IGNORE menjaga konfigurasi admin tetap aman.
+        packages = [
+            ("pro50","Pro 50 Kredit",29000,50,30,"user"),
+            ("pro120","Pro 120 Kredit",59000,120,30,"user"),
+            ("pro250","Pro 250 Kredit",99000,250,30,"user"),
+            ("school1000","Sekolah 1.000 Kredit",199000,1000,30,"school"),
+        ]
+        for kode,nama,harga,kredit,masa,target in packages:
+            conn.execute(
+                "INSERT OR IGNORE INTO billing_packages(kode,nama,harga,kredit,masa_hari,target,aktif,created_at) VALUES(?,?,?,?,?,?,1,?)",
+                (kode,nama,harga,kredit,masa,target,now())
+            )
         conn.commit()
     finally:
         conn.close()
