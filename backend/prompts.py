@@ -162,8 +162,10 @@ TEMPLATES = {
         "instr": (
             "Buatkan PROGRAM TAHUNAN (Prota) dalam bentuk tabel: No | Materi/TP Pokok | "
             "Alokasi JP | Semester. Susun cakupan materi satu tahun ajaran secara logis "
-            "untuk mata pelajaran dan kelas ini, total JP realistis (sesuai struktur "
-            "kurikulum), dan sertakan catatan hari efektif."
+            "berdasarkan input guru. Jangan menganggap jumlah JP, minggu efektif, atau hari efektif "
+            "tertentu sebagai ketentuan resmi jika guru tidak memberikannya. Jika data tersebut "
+            "tidak tersedia, gunakan perkiraan yang diberi label 'Perkiraan/Perlu disesuaikan' "
+            "dan tambahkan catatan bahwa kalender/struktur kurikulum sekolah harus diverifikasi."
         ),
     },
     "program-semester": {
@@ -173,8 +175,10 @@ TEMPLATES = {
         "title": "Prosem {mapel} Kelas {kelas} Smt {semester}",
         "instr": (
             "Buatkan PROGRAM SEMESTER (Prosem/Promes) dalam bentuk tabel: Minggu ke | TP/Materi | "
-            "Kegiatan | Asesmen | JP. Rincikan per minggu selama satu semester (16-18 minggu "
-            "efektif + cadangan untuk asesmen sumatif akhir), urut dari TP dasar ke lanjutan."
+            "Kegiatan | Asesmen | JP. Rincikan pembagian per minggu berdasarkan jumlah minggu "
+            "efektif yang diberikan guru. Jangan menetapkan 16-18 minggu sebagai angka resmi jika "
+            "tidak diberikan. Jika jumlah minggu efektif tidak tersedia, buat rancangan perkiraan "
+            "dan beri label 'Perkiraan/Perlu disesuaikan dengan kalender pendidikan sekolah'."
         ),
     },
     "remedial": {
