@@ -255,11 +255,15 @@ var GWCascade = (function () {
     wrap.className="gw-tp-master";
     wrap.style.cssText="margin:10px 0;padding:12px;border:1px solid #dbeafe;border-radius:12px;background:#f8fbff;";
     wrap.innerHTML='<div style="font-weight:700;margin-bottom:6px">🎯 Tujuan Pembelajaran</div><div class="gw-tp-hint" style="font-size:12px;color:#64748b;margin-bottom:8px">Pilih TP yang ingin digunakan.</div><div class="gw-tp-list"><span style="font-size:12px;color:#64748b">Pilih materi terlebih dahulu.</span></div>';
-    var hidden=document.createElement("textarea");
-    hidden.name="tp";
-    hidden.className="gw-tp-selected";
-    hidden.style.display="none";
-    wrap.appendChild(hidden);
+    // Gunakan field TP yang sudah ada agar tidak membuat dua input dengan name="tp".
+    var hidden=field(form,"tp");
+    if(!hidden){
+      hidden=document.createElement("textarea");
+      hidden.name="tp";
+      hidden.style.display="none";
+      wrap.appendChild(hidden);
+    }
+    hidden.classList.add("gw-tp-selected");
     mt.parentNode.parentNode.insertBefore(wrap, mt.parentNode.nextSibling);
 
     function load(){
