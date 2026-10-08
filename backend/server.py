@@ -805,33 +805,21 @@ class Handler(BaseHTTPRequestHandler):
         if not ai.is_configured():
             self._send_json(503, {"error": "Layanan AI belum dikonfigurasi."})
             return
-        # --- cek kuota ---
-        conn = db.get_conn()
-        try:
-            row = conn.execute(
-                "SELECT quota_used, quota_limit, is_pro FROM users WHERE id = ?",
-                (user["id"],),
-            ).fetchone()
-        finally:
-            conn.close()
-        if not row:
-            self._send_json(401, {"error": "Belum masuk."})
-            return
-        # Cek kuota sekolah dulu (jika anggota sekolah Pro)
-        sq = school.check_school_quota(user["id"])
-        if sq:
-            if sq["used"] >= sq["limit"]:
+        # --- reservasi kuota atomik sebelum memanggil AI ---
+        consumed = school.consume_quota(user["id"], 1)
+        if not consumed:
+            sq0 = school.check_school_quota(user["id"])
+            if sq0:
                 self._send_json(402, {
-                    "error": f"Kuota sekolah {sq['school_name']} habis. Hubungi admin sekolah.",
-                    "quota": {"used": sq["used"], "limit": sq["limit"], "is_pro": True, "school": True},
+                    "error": f"Kuota sekolah {sq0['school_name']} habis. Hubungi admin sekolah.",
+                    "quota": {"used": sq0["used"], "limit": sq0["limit"], "is_pro": True, "school": True},
                 })
-                return
-        elif not row["is_pro"] and (row["quota_used"] or 0) >= (row["quota_limit"] or 0):
-            self._send_json(402, {
-                "error": "Kuota generate gratis habis. Upgrade ke GuruWali Pro untuk kuota tanpa batas.",
-                "quota": {"used": row["quota_used"], "limit": row["quota_limit"], "is_pro": False},
-            })
+            else:
+                self._send_json(402, {
+                    "error": "Kuota generate habis. Upgrade ke GuruWali Pro atau tunggu kuota tersedia.",
+                })
             return
+        sq = school.check_school_quota(user["id"])
         # --- panggil AI ---
         # smart routing: override user > rekomendasi per tipe > default
         model_used = ai.resolve_model(gen_type, body.get("model"))
@@ -847,16 +835,17 @@ class Handler(BaseHTTPRequestHandler):
                 temperature=0.7,
             )
         except RuntimeError as e:
+            school.refund_quota(consumed)
             self._send_json(502, {"error": str(e)})
             return
         except Exception as e:
+            school.refund_quota(consumed)
             self._send_json(502, {"error": f"Gagal menghubungi AI: {e}"})
             return
-        # --- simpan + kurangi kuota ---
+        # --- simpan hasil (kuota sudah dicadangkan secara atomik) ---
         doc = None
         conn = db.get_conn()
         try:
-            school.increment_quota(user["id"])
             if save and content:
                 title = prompts.make_title(gen_type, params)
                 cur = conn.execute(
