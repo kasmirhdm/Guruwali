@@ -720,9 +720,10 @@ class Handler(BaseHTTPRequestHandler):
                 u = conn.execute("SELECT quota_used,quota_limit FROM users WHERE id=?", (order["user_id"],)).fetchone()
                 if not u:
                     conn.rollback(); self._send_json(404, {"error": "Pengguna tidak ditemukan."}); return
-                new_limit = max(int(u["quota_limit"] or 0), int(order["kredit"]))
+                # Saldo kredit = quota_limit - quota_used. Pembelian baru menambah saldo.
+                new_limit = int(u["quota_used"] or 0) + int(order["kredit"])
                 conn.execute(
-                    "UPDATE users SET is_pro=1,quota_used=0,quota_limit=? WHERE id=?",
+                    "UPDATE users SET is_pro=1,quota_limit=? WHERE id=?",
                     (new_limit, order["user_id"])
                 )
                 conn.commit()
