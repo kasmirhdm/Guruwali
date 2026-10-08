@@ -51,7 +51,7 @@ const GWSchool = {
         <div style="font-size:14px">
           ${members.map(m => `<div style="padding:8px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
             <span>${this.esc(m.nama||m.email)} <small style="color:#888">(${this.esc(m.role)})</small></span>
-            ${isAdmin && m.role !== 'admin' ? `<button onclick="GWSchool.remove(${m.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #ef4444;color:#ef4444;background:#fff;font-size:12px">Keluarkan</button>` : ''}
+            ${isAdmin && m.role !== 'admin' ? `<span style="display:flex;gap:6px"><button onclick="GWSchool.transfer(${m.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #2563eb;color:#2563eb;background:#fff;font-size:12px">Jadikan Admin</button><button onclick="GWSchool.remove(${m.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #ef4444;color:#ef4444;background:#fff;font-size:12px">Keluarkan</button></span>` : ''}
           </div>`).join('')}
         </div>
         ${!isAdmin ? `<button onclick="GWSchool.leave()" style="margin-top:12px;padding:8px 14px;border-radius:8px;border:1px solid #ef4444;color:#ef4444;background:#fff">Keluar dari Sekolah</button>` : ''}`;
@@ -106,6 +106,15 @@ const GWSchool = {
          <button onclick="navigator.clipboard.writeText('${d.invite_code}')" style="margin-left:8px;padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:12px">Salin</button>
          <br><small style="color:#888">Bagikan kode ini ke guru-guru di sekolahmu</small>`;
     }
+  },
+
+  async transfer(uid) {
+    if (!confirm('Jadikan guru ini sebagai Admin Sekolah? Anda akan menjadi Guru biasa.')) return;
+    const r = await fetch('/api/school/transfer-admin', {method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: uid})});
+    const d = await r.json();
+    alert(d.message || d.error || 'Gagal');
+    if (d.ok) this.load();
   },
 
   async remove(uid) {
