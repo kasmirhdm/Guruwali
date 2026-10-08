@@ -894,10 +894,62 @@
     });
   }
 
+  /* ================= billing / bisnis ================= */
+  var billingPackages = [];
+
+  function formatRp(n) {
+    return "Rp" + Number(n || 0).toLocaleString("id-ID");
+  }
+
+  function loadBillingPackages() {
+    return api("GET", "/api/billing/packages").then(function (res) {
+      if (res.status === 200) billingPackages = res.data.packages || [];
+      return billingPackages;
+    });
+  }
+
+  function buyPackage(code) {
+    loadBillingPackages().then(function (packages) {
+      var pkg = packages.find(function (x) { return x.kode === code; });
+      if (!pkg) { alert("Paket belum tersedia."); return; }
+      api("POST", "/api/billing/order", { package_id: pkg.id }).then(function (res) {
+        if (res.status !== 201) {
+          alert(res.data.error || "Gagal membuat pesanan.");
+          return;
+        }
+        var o = res.data.order;
+        var box = $("gw-bayar-box");
+        if (box) {
+          box.innerHTML =
+            '<div class="form-card" style="border:2px solid #7c3aed">' +
+            '<h3 style="margin-top:0">Pesanan dibuat</h3>' +
+            '<p>Nomor pesanan: <strong>' + esc(o.order_no) + '</strong></p>' +
+            '<p>Paket: <strong>' + esc(o.package) + '</strong> — ' + formatRp(o.amount) + '</p>' +
+            '<p>Kredit: <strong>' + o.kredit + '</strong></p>' +
+            '<p class="muted">Status: <strong>Menunggu pembayaran</strong></p>' +
+            '<p class="small muted">Pembayaran otomatis akan mengaktifkan kredit setelah payment gateway GuruWali menerima status berhasil.</p>' +
+            '</div>';
+          box.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+    });
+  }
+
+  window.GWUpgrade = {
+    bayar: function (kode) { buyPackage(kode === "pro" ? "pro50" : kode); }
+  };
+
   /* ================= events ================= */
   document.addEventListener("DOMContentLoaded", function () {
     // nav
     initModelSelect();
+    loadBillingPackages();
+    var buyPro50 = $("buyPro50");
+    if (buyPro50) buyPro50.addEventListener("click", function () { buyPackage("pro50"); });
+    var buySchool = $("buySchool");
+    if (buySchool) buySchool.addEventListener("click", function () {
+      alert("Paket Sekolah akan menggunakan checkout sekolah. Fondasi order sudah tersedia; integrasi pembayaran sekolah dilanjutkan setelah payment gateway dipasang.");
+    });
     document.querySelectorAll("#appNav a").forEach(function (a) {
       a.addEventListener("click", function () { setTimeout(route, 0); });
     });
