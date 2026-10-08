@@ -819,7 +819,8 @@
         semester: $("pkSemester") ? $("pkSemester").value : "",
         materi: $("pkMateri").value.trim(),
         alokasi: $("pkAlokasi").value.trim(),
-        cp: $("pkCp").value.trim()
+        cp: $("pkCp").value.trim(),
+        tp: ((form.querySelector('[name="tp"]') || {}).value || "").trim()
       };
       if (!params.mapel || !params.kelas || !params.materi) {
         msg($("pkMsg"), "Mata pelajaran, kelas, dan materi wajib diisi.", "error");
